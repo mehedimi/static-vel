@@ -3,8 +3,10 @@
 namespace Mehedimi\StaticVel;
 
 use Illuminate\Support\ServiceProvider;
+use Mehedimi\StaticVel\Auth\AuthCookieSubscriber;
 use Mehedimi\StaticVel\Commands\ClearStaticPages;
 use Mehedimi\StaticVel\Http\Middleware\CaptureStaticResponse;
+use Mehedimi\StaticVel\Http\Middleware\SyncAuthCookie;
 
 class StaticVelServiceProvider extends ServiceProvider
 {
@@ -31,6 +33,11 @@ class StaticVelServiceProvider extends ServiceProvider
             ]);
         }
 
+        if (AuthCookieSubscriber::cookieName() !== null) {
+            $this->app['events']->subscribe(AuthCookieSubscriber::class);
+        }
+
         $this->app['router']->aliasMiddleware('static-vel', CaptureStaticResponse::class);
+        $this->app['router']->aliasMiddleware('static-vel.auth', SyncAuthCookie::class);
     }
 }

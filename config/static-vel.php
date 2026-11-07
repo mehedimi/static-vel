@@ -21,9 +21,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | The directory captured responses are written to, keyed by request path.
-    | It defaults to a folder inside your `public/` directory so the nginx
-    | config from the README can serve the files with a plain `try_files`
-    | rule. Every captured page is stored as `<path>.html`.
+    | HTML pages are stored as `<path>.html`, Inertia payloads as
+    | `<path>.json`, and `/` is stored as `index`. A query string is
+    | embedded verbatim into the file name (`/blog?x=1` -> `blog.x=1.html`).
     |
     */
 
@@ -31,53 +31,38 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Cacheable status codes
+    | Handle Inertia
     |--------------------------------------------------------------------------
     |
-    | Only responses with one of these status codes are captured. Redirects,
-    | validation errors, and server errors are never written to disk.
+    | When enabled, the JSON payload of Inertia visits (requests carrying the
+    | `X-Inertia` header) is captured as `<path>.json`, so client-side
+    | navigations can be served statically as well. Inertia partial reloads
+    | are never captured - they exist to fetch fresh data.
     |
     */
 
-    'cacheable_status_codes' => [200],
+    'handle_inertia' => env('STATIC_VEL_HANDLE_INERTIA', true),
 
     /*
     |--------------------------------------------------------------------------
-    | Cacheable content types
+    | Auth marker cookie
     |--------------------------------------------------------------------------
     |
-    | Only responses whose `Content-Type` header starts with one of these
-    | values are captured. `text/html` keeps JSON, Inertia payloads, and
-    | file downloads out of the static cache.
+    | nginx cannot check Laravel sessions, but it can inspect cookies. The
+    | package sets this marker cookie on login and clears it on logout, and
+    | the nginx config from the README skips the static cache whenever the
+    | request carries it - so authenticated visitors always receive fresh
+    | content from the application, while guests are served the cached page.
+    |
+    | The capture middleware also skips responses for requests carrying the
+    | cookie (or for authenticated users), so personalized content can never
+    | overwrite the guest cache.
+    |
+    | Set it to `null` to disable the auth handling. Avoid dashes in the
+    | name - nginx exposes cookies as `$cookie_<name>` variables.
     |
     */
 
-    'cacheable_content_types' => ['text/html'],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Ignored query parameters
-    |--------------------------------------------------------------------------
-    |
-    | Requests carrying these query parameters are still captured under their
-    | base path, because they are tracking parameters that don't change the
-    | page content (`/about?utm_source=twitter` stores `/about.html`).
-    | Requests carrying any other query parameter are never captured, so the
-    | first visitor can't poison the cache for everyone else.
-    |
-    */
-
-    'ignored_query_parameters' => [
-        'utm_source',
-        'utm_medium',
-        'utm_campaign',
-        'utm_term',
-        'utm_content',
-        'fbclid',
-        'gclid',
-        'msclkid',
-        'ttclid',
-        'ref',
-    ],
+    'auth_cookie' => env('STATIC_VEL_AUTH_COOKIE', 'static_vel_auth'),
 
 ];

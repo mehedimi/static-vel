@@ -44,19 +44,89 @@ class CaptureStaticResponseTest extends TestCase
     }
 
     #[Test]
-    public function it_captures_requests_carrying_only_ignored_query_parameters(): void
+    public function it_captures_query_string_variants_separately(): void
     {
-        $this->visit('/about?utm_source=twitter&utm_campaign=launch');
+        $this->visit('/about');
+        $this->visit('/about?category=e-commerce');
 
         $this->assertFileExists($this->staticPath.'/about.html');
+        $this->assertFileExists($this->staticPath.'/about.category=e-commerce.html');
+        $this->assertSame('<html>about</html>', file_get_contents($this->staticPath.'/about.category=e-commerce.html'));
     }
 
     #[Test]
-    public function it_does_not_capture_requests_with_other_query_parameters(): void
+    public function it_captures_each_parameter_combination_as_its_own_file(): void
     {
-        $this->visit('/about?page=2');
+        $this->visit('/products?type=shoes&color=red');
 
-        $this->assertFileDoesNotExist($this->staticPath.'/about.html');
+        $this->assertFileExists($this->staticPath.'/products.type=shoes&color=red.html');
+        $this->assertFileDoesNotExist($this->staticPath.'/products.html');
+    }
+
+    #[Test]
+    public function it_does_not_capture_unsafe_query_strings(): void
+    {
+        $this->visit('/about?category=../../etc');
+
+        $this->assertDirectoryDoesNotExist($this->staticPath);
+    }
+
+    #[Test]
+    public function it_captures_inertia_visits_as_json(): void
+    {
+        $this->visit('/inertia-page', ['X-Inertia' => 'true']);
+
+        $file = $this->staticPath.'/inertia-page.json';
+
+        $this->assertFileExists($file);
+        $this->assertStringContainsString('InertiaPage', (string) file_get_contents($file));
+        $this->assertFileDoesNotExist($this->staticPath.'/inertia-page.html');
+    }
+
+    #[Test]
+    public function it_captures_the_inertia_payload_of_the_root_page(): void
+    {
+        $this->visit('/', ['X-Inertia' => 'true']);
+
+        $this->assertFileExists($this->staticPath.'/index.json');
+    }
+
+    #[Test]
+    public function it_does_not_capture_inertia_visits_when_handling_is_disabled(): void
+    {
+        $this->app['config']->set('static-vel.handle_inertia', false);
+
+        $this->visit('/inertia-page', ['X-Inertia' => 'true']);
+
+        $this->assertDirectoryDoesNotExist($this->staticPath);
+    }
+
+    #[Test]
+    public function it_does_not_capture_inertia_partial_reloads(): void
+    {
+        $this->visit('/inertia-page', [
+            'X-Inertia' => 'true',
+            'X-Inertia-Partial-Component' => 'InertiaPage',
+        ]);
+
+        $this->assertDirectoryDoesNotExist($this->staticPath);
+    }
+
+    #[Test]
+    public function it_does_not_capture_requests_carrying_the_auth_cookie(): void
+    {
+        $this->visit('/about', cookies: ['static_vel_auth' => '1']);
+
+        $this->assertDirectoryDoesNotExist($this->staticPath);
+    }
+
+    #[Test]
+    public function it_does_not_capture_authenticated_users(): void
+    {
+        $this->actingAs($this->user());
+
+        $this->visit('/about');
+
         $this->assertDirectoryDoesNotExist($this->staticPath);
     }
 
@@ -90,17 +160,9 @@ class CaptureStaticResponseTest extends TestCase
     }
 
     #[Test]
-    public function it_does_not_capture_non_html_responses(): void
+    public function it_does_not_capture_non_html_responses_outside_of_inertia(): void
     {
         $this->visit('/json');
-
-        $this->assertDirectoryDoesNotExist($this->staticPath);
-    }
-
-    #[Test]
-    public function it_does_not_capture_inertia_visits(): void
-    {
-        $this->visit('/about', ['X-Inertia' => 'true']);
 
         $this->assertDirectoryDoesNotExist($this->staticPath);
     }

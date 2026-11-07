@@ -3,8 +3,11 @@
 namespace Mehedimi\StaticVel\Tests;
 
 use FilesystemIterator;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
+use Mehedimi\StaticVel\Http\Middleware\SyncAuthCookie;
 use Mehedimi\StaticVel\StaticVelServiceProvider;
 use Orchestra\Testbench\TestCase as TestbenchTestCase;
 use RecursiveDirectoryIterator;
@@ -40,8 +43,23 @@ abstract class TestCase extends TestbenchTestCase
 
     protected function defineRoutes($router): void
     {
+        // Must be registered before the catch-all route below.
+        $router->middleware(SyncAuthCookie::class)->get('/sync', fn () => 'ok');
+
         $router->middleware('static-vel')->group(function ($router) {
-            $router->get('/', fn () => '<html>home</html>');
+            // Routes mimic an Inertia app: X-Inertia visits get the JSON
+            // payload, full page loads get the HTML shell.
+            $router->get('/', function (Request $request) {
+                return $request->hasHeader('X-Inertia')
+                    ? response()->json(['component' => 'Home', 'props' => [], 'url' => '/', 'version' => '1'])
+                    : '<html>home</html>';
+            });
+            $router->get('/inertia-page', function (Request $request) {
+                return $request->hasHeader('X-Inertia')
+                    ? response()->json(['component' => 'InertiaPage', 'props' => ['title' => 'Hello'], 'url' => '/inertia-page', 'version' => '1'])
+                    : '<html>inertia page</html>';
+            });
+
             $router->get('/about', fn () => '<html>about</html>');
             $router->post('/about', fn () => '<html>about</html>');
             $router->get('/products/{id}', fn (string $id) => "<html>product {$id}</html>");
@@ -62,9 +80,9 @@ abstract class TestCase extends TestbenchTestCase
      * Request a page and let the middleware capture it, the same way the
      * HTTP kernel does after the response has been sent.
      */
-    protected function visit(string $uri, array $headers = []): TestResponse
+    protected function visit(string $uri, array $headers = [], array $cookies = []): TestResponse
     {
-        $response = $this->get($uri, $headers);
+        $response = $this->call('GET', $uri, [], $cookies, [], $this->transformHeadersToServerVars($headers));
 
         $this->app->make(HttpKernel::class)->terminate(
             $this->app->make('request'),
@@ -72,6 +90,47 @@ abstract class TestCase extends TestbenchTestCase
         );
 
         return $response;
+    }
+
+    /**
+     * A minimal authenticatable user.
+     */
+    protected function user(): Authenticatable
+    {
+        return new class implements Authenticatable
+        {
+            public function getAuthIdentifierName()
+            {
+                return 'id';
+            }
+
+            public function getAuthIdentifier()
+            {
+                return 1;
+            }
+
+            public function getAuthPassword()
+            {
+                return 'secret';
+            }
+
+            public function getAuthPasswordName()
+            {
+                return 'password';
+            }
+
+            public function getRememberToken()
+            {
+                return '';
+            }
+
+            public function setRememberToken($value) {}
+
+            public function getRememberTokenName()
+            {
+                return 'remember_token';
+            }
+        };
     }
 
     protected function deleteDirectory(string $directory): void

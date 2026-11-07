@@ -4,10 +4,12 @@ namespace Mehedimi\StaticVel\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Mehedimi\StaticVel\Auth\AuthCookieSubscriber;
 use Mehedimi\StaticVel\Support\StaticPagePath;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 use function config;
 use function logger;
@@ -37,7 +39,7 @@ class CaptureStaticResponse
             if ($this->shouldCapture($request, $response)) {
                 $this->store($request, $response);
             }
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             logger()->warning('static-vel: failed to capture the response.', [
                 'reason' => $exception->getMessage(),
             ]);
@@ -65,33 +67,20 @@ class CaptureStaticResponse
             return false;
         }
 
-        if (! in_array($response->getStatusCode(), (array) config('static-vel.cacheable_status_codes', [200]), true)) {
+        if ($response->getStatusCode() !== 200) {
             return false;
         }
 
-        if (! $this->hasCacheableContentType($response)) {
-            return false;
-        }
-
-        // Inertia visits expect a JSON payload from Laravel: they drive the
-        // asset version check (409 + full reload) and partial reloads, so
-        // they must never be answered with a static HTML file.
-        if ($request->hasHeader('X-Inertia')) {
-            return false;
+        // Authenticated visitors always receive fresh content from Laravel -
+        // the auth marker cookie is exactly what nginx checks. Their
+        // responses must never overwrite the guest cache.
+        if (($name = AuthCookieSubscriber::cookieName()) !== null) {
+            if ($request->hasCookie($name) || auth()->check()) {
+                return false;
+            }
         }
 
         return true;
-    }
-
-    /**
-     * Determine whether the response's content type should be captured.
-     */
-    protected function hasCacheableContentType(Response $response): bool
-    {
-        $contentType = strtolower((string) $response->headers->get('Content-Type'));
-
-        return collect((array) config('static-vel.cacheable_content_types', ['text/html']))
-            ->contains(fn (string $type) => str_starts_with($contentType, strtolower($type)));
     }
 
     /**
@@ -99,7 +88,29 @@ class CaptureStaticResponse
      */
     protected function store(Request $request, Response $response): void
     {
-        $target = StaticPagePath::forRequest($request);
+        // Inertia partial reloads return only a subset of the page props -
+        // never cache them, they would overwrite the full payload.
+        if ($request->hasHeader('X-Inertia-Partial-Component')) {
+            return;
+        }
+
+        if ($request->hasHeader('X-Inertia')) {
+            if (! config('static-vel.handle_inertia', true)) {
+                return;
+            }
+
+            if (! $this->hasContentType($response, 'application/json')) {
+                return;
+            }
+
+            $target = StaticPagePath::forRequest($request, 'json');
+        } else {
+            if (! $this->hasContentType($response, 'text/html')) {
+                return;
+            }
+
+            $target = StaticPagePath::forRequest($request, 'html');
+        }
 
         if ($target === null) {
             return;
@@ -111,6 +122,22 @@ class CaptureStaticResponse
             return;
         }
 
+        $this->write($target, $content);
+    }
+
+    /**
+     * Determine whether the response's content type starts with the given type.
+     */
+    protected function hasContentType(Response $response, string $type): bool
+    {
+        return str_starts_with(strtolower((string) $response->headers->get('Content-Type')), $type);
+    }
+
+    /**
+     * Write the content to the target file, atomically.
+     */
+    protected function write(string $target, string $content): void
+    {
         $directory = dirname($target);
 
         if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
