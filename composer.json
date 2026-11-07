@@ -1,0 +1,55 @@
+{
+    "name": "mehedimi/static-vel",
+    "description": "Effortless static response caching for Laravel: capture rendered pages and serve them straight from nginx.",
+    "keywords": [
+        "laravel",
+        "static",
+        "static-pages",
+        "cache",
+        "nginx",
+        "inertia",
+        "performance"
+    ],
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Mehedi"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/contracts": "^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.13",
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "phpunit/phpunit": "^10.5|^11.5|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mehedimi\\StaticVel\\": "src/",
+            "Mehedimi\\StaticVel\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": [
+            "@php vendor/bin/phpunit"
+        ],
+        "lint": [
+            "@php vendor/bin/pint --test"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mehedimi\\StaticVel\\StaticVelServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
