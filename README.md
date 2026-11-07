@@ -5,22 +5,22 @@
 Effortless static response caching for Laravel: capture rendered responses **after** they are sent, then let nginx serve them as plain files — without touching Laravel at all.
 
 ```mermaid
-flowchart TD
-    A["Request arrives<br/>GET /blog?category=e-commerce"] --> B{"Authenticated visitor?<br/>auth marker cookie present"}
+flowchart LR
+    A["Request<br/>GET /blog?category=e-commerce"] --> B{"Authenticated?"}
+    B -->|no| C{"Inertia partial<br/>reload?"}
     B -->|yes| L["Laravel renders<br/>the page"]
-    B -->|no| C{"Inertia partial reload?<br/>X-Inertia-Partial-Component"}
+    C -->|no| D{"Safe query<br/>string?"}
     C -->|yes| L
-    C -->|no| D{"Safe query string?<br/>allowlist, max 128 chars"}
     D -->|no| L
-    D -->|yes| E{"Query string present?"}
-    E -->|no| F["nginx looks for<br/>static-vel/blog.html<br/>.json for Inertia visits"]
-    E -->|yes| G["nginx looks for<br/>static-vel/blog.category=e-commerce.html<br/>.json for Inertia visits"]
+    D -->|yes| E{"Query string<br/>present?"}
+    E -->|no| F["nginx looks for<br/>blog.html<br/>(.json for Inertia)"]
+    E -->|yes| G["nginx looks for<br/>blog.category=e-commerce.html<br/>(.json for Inertia)"]
     F -->|file exists| S["Served as a static file<br/>PHP never boots"]
     G -->|file exists| S
     F -->|missing| L
     G -->|missing| L
     L --> T["Response sent<br/>to the browser"]
-    T --> U["static-vel captures the response<br/>and stores it<br/>atomic: temp file + rename"]
+    T --> U["static-vel captures<br/>+ stores the file"]
     U -.->|next visit| S
 
     style S fill:#10b981,color:#ffffff
