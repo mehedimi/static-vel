@@ -89,8 +89,28 @@ Files are written atomically (temporary file + `rename`), so nginx never picks u
 - Inertia visits, when `handle_inertia` is `false`
 - Requests carrying the [auth marker cookie](#authenticated-visitors) — authenticated visitors' responses must never overwrite the guest cache
 - Requests with query strings whose parameters were not allowed via [`CacheKey::allowQueryKeys()`](#query-strings)
+- Responses the application explicitly skipped via [`Capture::skip()`](#skipping-capture)
 - Requests with an [unsafe query string](#query-strings) (too long, or containing characters that could form a path)
 - Paths attempting traversal (`/..%2Fetc/passwd`)
+
+### Skipping capture
+
+The application can tell the package to skip capturing a specific response at runtime — useful when a route conditionally renders something that must never be cached:
+
+```php
+use Mehedi\StaticVel\Capture;
+
+public function show(Product $product)
+{
+    if ($product->isPersonalized()) {
+        Capture::skip();
+    }
+
+    return view('product', compact('product'));
+}
+```
+
+The response is still rendered and sent to the visitor — only the static capture is skipped. The flag lives on the request, so it is scoped to exactly one request and never leaks to the next.
 
 ### Query strings
 

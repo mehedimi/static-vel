@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
 use Mehedi\StaticVel\CacheKey;
+use Mehedi\StaticVel\Capture;
 use Mehedi\StaticVel\Support\StaticPagePath;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -54,6 +55,11 @@ class CaptureStaticResponse
     protected function shouldCapture(Request $request, Response $response): bool
     {
         if (! config('static-vel.enabled', true)) {
+            return false;
+        }
+
+        // The application explicitly asked us to skip this response.
+        if (Capture::skipped($request)) {
             return false;
         }
 

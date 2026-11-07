@@ -8,6 +8,7 @@ use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
 use Mehedi\StaticVel\CacheKey;
+use Mehedi\StaticVel\Capture;
 use Mehedi\StaticVel\StaticVelServiceProvider;
 use Orchestra\Testbench\TestCase as TestbenchTestCase;
 use RecursiveDirectoryIterator;
@@ -69,6 +70,12 @@ abstract class TestCase extends TestbenchTestCase
                 CacheKey::allowQueryKeys(['category', 'page']);
 
                 return '<html>blog</html>';
+            });
+            $router->get('/skip', function () {
+                // Simulates a controller that opts out of the capture.
+                Capture::skip();
+
+                return '<html>skipped</html>';
             });
             $router->get('/products/{id}', fn (string $id) => "<html>product {$id}</html>");
             $router->get('/counter', function () {

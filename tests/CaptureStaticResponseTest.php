@@ -3,6 +3,7 @@
 namespace Mehedi\StaticVel\Tests;
 
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Mehedi\StaticVel\Capture;
 use PHPUnit\Framework\Attributes\Test;
 
 class CaptureStaticResponseTest extends TestCase
@@ -196,6 +197,23 @@ class CaptureStaticResponseTest extends TestCase
         $this->visit('/json');
 
         $this->assertDirectoryDoesNotExist($this->staticPath);
+    }
+
+    #[Test]
+    public function it_does_not_capture_when_the_application_skips_the_response(): void
+    {
+        $this->visit('/skip');
+
+        $this->assertDirectoryDoesNotExist($this->staticPath);
+    }
+
+    #[Test]
+    public function it_does_not_leak_the_skip_flag_across_requests(): void
+    {
+        $this->visit('/skip');
+        $this->visit('/about');
+
+        $this->assertFileExists($this->staticPath.'/about.html');
     }
 
     #[Test]
