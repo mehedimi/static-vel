@@ -36,9 +36,13 @@ class ClearStaticPages extends Command
             return self::SUCCESS;
         }
 
-        $files = File::allFiles($path);
+        $files = File::allFiles($path, hidden: true);
 
-        File::deleteDirectory($path, preserve: true);
+        if (! File::deleteDirectory($path, preserve: true)) {
+            $this->error("Unable to clear the static pages from [{$path}].");
+
+            return self::FAILURE;
+        }
 
         $this->info('Cleared ['.count($files)."] static page(s) from [{$path}].");
 

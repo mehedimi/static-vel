@@ -7,7 +7,6 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
-use Mehedi\StaticVel\Http\Middleware\SyncAuthCookie;
 use Mehedi\StaticVel\StaticVelServiceProvider;
 use Orchestra\Testbench\TestCase as TestbenchTestCase;
 use RecursiveDirectoryIterator;
@@ -43,8 +42,9 @@ abstract class TestCase extends TestbenchTestCase
 
     protected function defineRoutes($router): void
     {
-        // Must be registered before the catch-all route below.
-        $router->middleware(SyncAuthCookie::class)->get('/sync', fn () => 'ok');
+        // Uses the alias, so the provider's middleware registration is
+        // covered too. Must be registered before the catch-all route.
+        $router->middleware('static-vel.auth')->get('/sync', fn () => 'ok');
 
         $router->middleware('static-vel')->group(function ($router) {
             // Routes mimic an Inertia app: X-Inertia visits get the JSON

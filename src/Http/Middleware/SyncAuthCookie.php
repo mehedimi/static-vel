@@ -4,7 +4,6 @@ namespace Mehedi\StaticVel\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cookie;
 use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -25,15 +24,17 @@ class SyncAuthCookie
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
-        if ($name = AuthCookieSubscriber::cookieName()) {
-            $authenticated = auth()->check();
+        $name = AuthCookieSubscriber::cookieName();
+
+        if ($name) {
+            $authenticated = auth()->guard()->check();
 
             if ($authenticated && ! $request->hasCookie($name)) {
-                Cookie::queue($name, '1', AuthCookieSubscriber::COOKIE_MINUTES);
+                AuthCookieSubscriber::queueMarker();
             } elseif (! $authenticated && $request->hasCookie($name)) {
-                Cookie::queue(Cookie::forget($name));
+                AuthCookieSubscriber::queueForget();
             }
         }
 

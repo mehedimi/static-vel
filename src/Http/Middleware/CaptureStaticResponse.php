@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
+use function auth;
 use function config;
 use function logger;
 
@@ -22,7 +23,7 @@ class CaptureStaticResponse
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         return $next($request);
     }
@@ -30,11 +31,8 @@ class CaptureStaticResponse
     /**
      * Capture the response after it has been sent to the browser, so the
      * page can be served as a static file next time.
-     *
-     * @param  Request  $request
-     * @param  Response  $response
      */
-    public function terminate($request, $response): void
+    public function terminate(Request $request, Response $response): void
     {
         try {
             if ($this->shouldCapture($request, $response)) {
@@ -42,6 +40,8 @@ class CaptureStaticResponse
             }
         } catch (Throwable $exception) {
             logger()->warning('static-vel: failed to capture the response.', [
+                'path' => $request->path(),
+                'exception' => $exception::class,
                 'reason' => $exception->getMessage(),
             ]);
         }
@@ -50,13 +50,9 @@ class CaptureStaticResponse
     /**
      * Determine whether the response should be written to the static cache.
      */
-    protected function shouldCapture($request, $response): bool
+    protected function shouldCapture(Request $request, Response $response): bool
     {
         if (! config('static-vel.enabled', true)) {
-            return false;
-        }
-
-        if (! $request instanceof Request || ! $response instanceof Response) {
             return false;
         }
 
@@ -76,7 +72,7 @@ class CaptureStaticResponse
         // the auth marker cookie is exactly what nginx checks. Their
         // responses must never overwrite the guest cache.
         if ($name = AuthCookieSubscriber::cookieName()) {
-            if ($request->hasCookie($name) || auth()->check()) {
+            if ($request->hasCookie($name) || auth()->guard()->check()) {
                 return false;
             }
         }
@@ -119,7 +115,7 @@ class CaptureStaticResponse
 
         $content = $response->getContent();
 
-        if ($content === false || $content === null || $content === '') {
+        if ($content === false || $content === '') {
             return;
         }
 
