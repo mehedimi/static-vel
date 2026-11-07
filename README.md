@@ -7,21 +7,21 @@ Effortless static response caching for Laravel: capture rendered responses **aft
 ```mermaid
 flowchart TD
     A["Request arrives<br/>GET /blog?category=e-commerce"] --> B{"Authenticated visitor?<br/>auth marker cookie present"}
-    B -- "yes" --> L["Laravel renders<br/>the page"]
-    B -- "no" --> C{"Inertia partial reload?<br/>X-Inertia-Partial-Component"}
-    C -- "yes" --> L
-    C -- "no" --> D{"Safe query string?<br/>allowlist, max 128 chars"}
-    D -- "no" --> L
-    D -- "yes" --> E{"Query string present?"}
-    E -- "no" --> F["nginx looks for<br/>static-vel/blog.html<br/>.json for Inertia visits"]
-    E -- "yes" --> G["nginx looks for<br/>static-vel/blog.category=e-commerce.html<br/>.json for Inertia visits"]
-    F -- "file exists" --> S["Served as a static file<br/>PHP never boots"]
-    G -- "file exists" --> S
-    F -- "missing" --> L
-    G -- "missing" --> L
+    B -->|yes| L["Laravel renders<br/>the page"]
+    B -->|no| C{"Inertia partial reload?<br/>X-Inertia-Partial-Component"}
+    C -->|yes| L
+    C -->|no| D{"Safe query string?<br/>allowlist, max 128 chars"}
+    D -->|no| L
+    D -->|yes| E{"Query string present?"}
+    E -->|no| F["nginx looks for<br/>static-vel/blog.html<br/>.json for Inertia visits"]
+    E -->|yes| G["nginx looks for<br/>static-vel/blog.category=e-commerce.html<br/>.json for Inertia visits"]
+    F -->|file exists| S["Served as a static file<br/>PHP never boots"]
+    G -->|file exists| S
+    F -->|missing| L
+    G -->|missing| L
     L --> T["Response sent<br/>to the browser"]
     T --> U["static-vel captures the response<br/>and stores it<br/>atomic: temp file + rename"]
-    U -. "next visit" .-> S
+    U -.->|next visit| S
 
     style S fill:#10b981,color:#ffffff
     style L fill:#3b82f6,color:#ffffff
