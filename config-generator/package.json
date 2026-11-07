@@ -1,9 +1,9 @@
 {
-    "name": "static-vel-nginx-generator",
+    "name": "static-vel-config-generator",
     "private": true,
     "version": "1.0.0",
     "type": "module",
-    "description": "Generates the nginx configuration for the static-vel package from your endpoints.",
+    "description": "Generates reverse proxy configurations for the static-vel package from your endpoints.",
     "scripts": {
         "dev": "vite",
         "build": "vue-tsc -b && vite build",

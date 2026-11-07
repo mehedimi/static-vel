@@ -3,7 +3,7 @@
 /.phpunit.result.cache
 /.phpunit.cache
 /.php-cs-fixer.cache
-/nginx-generator/node_modules
-/nginx-generator/dist
+/config-generator/node_modules
+/config-generator/dist
 composer.lock
 .zcode
