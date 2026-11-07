@@ -5,10 +5,8 @@ namespace Mehedi\StaticVel;
 use Illuminate\Http\Request;
 
 use function app;
-use function array_filter;
 use function array_unique;
 use function array_values;
-use function is_array;
 
 class CacheKey
 {
@@ -20,9 +18,9 @@ class CacheKey
     protected const string ATTRIBUTE = 'static_vel_allowed_query_keys';
 
     /**
-     * Allow the given query parameter names to become part of the cache
-     * key for the current request. By default, no query parameters are
-     * allowed and query strings never produce cache files.
+     * Allow the given query parameter names to become part of the cache key
+     * for the current request. By default, no query parameters are allowed
+     * and query strings never produce cache files.
      *
      * Validate the parameter values with Laravel's validation API first
      * and pass the validated keys - only values that passed your rules can
@@ -48,7 +46,7 @@ class CacheKey
 
         $allowed = array_values(array_unique([
             ...static::allowedQueryKeys($request),
-            ...array_values(array_filter($keys, 'is_string')),
+            ...$keys,
         ]));
 
         $request->attributes->set(self::ATTRIBUTE, $allowed);
@@ -61,12 +59,9 @@ class CacheKey
      */
     public static function allowedQueryKeys(Request $request): array
     {
+        /** @var list<string> $keys */
         $keys = $request->attributes->get(self::ATTRIBUTE, []);
 
-        if (! is_array($keys)) {
-            return [];
-        }
-
-        return array_values(array_filter($keys, 'is_string'));
+        return $keys;
     }
 }
