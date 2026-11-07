@@ -19,13 +19,16 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install Dependencies 🔧
         working-directory: config-generator
-        run: npm ci
+        run: pnpm install
 
       - name: Build 🔧
         working-directory: config-generator
-        run: npm run build
+        run: pnpm run build
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
