@@ -33,7 +33,7 @@ class StaticVelServiceProvider extends ServiceProvider
             ]);
         }
 
-        if (AuthCookieSubscriber::cookieName() !== null) {
+        if (AuthCookieSubscriber::cookieName()) {
             $this->app['events']->subscribe(AuthCookieSubscriber::class);
         }
 

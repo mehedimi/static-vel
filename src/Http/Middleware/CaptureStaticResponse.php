@@ -74,7 +74,7 @@ class CaptureStaticResponse
         // Authenticated visitors always receive fresh content from Laravel -
         // the auth marker cookie is exactly what nginx checks. Their
         // responses must never overwrite the guest cache.
-        if (($name = AuthCookieSubscriber::cookieName()) !== null) {
+        if ($name = AuthCookieSubscriber::cookieName()) {
             if ($request->hasCookie($name) || auth()->check()) {
                 return false;
             }

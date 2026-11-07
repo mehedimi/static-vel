@@ -35,7 +35,7 @@ class AuthCookieSubscriber
      */
     public function handleLogin(Login $event): void
     {
-        if (($name = static::cookieName()) !== null) {
+        if ($name = static::cookieName()) {
             Cookie::queue($name, '1', static::COOKIE_MINUTES);
         }
     }
@@ -45,7 +45,7 @@ class AuthCookieSubscriber
      */
     public function handleLogout(Logout $event): void
     {
-        if (($name = static::cookieName()) !== null) {
+        if ($name = static::cookieName()) {
             Cookie::queue(Cookie::forget($name));
         }
     }

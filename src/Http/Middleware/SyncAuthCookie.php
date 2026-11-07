@@ -27,9 +27,7 @@ class SyncAuthCookie
      */
     public function handle($request, Closure $next)
     {
-        $name = AuthCookieSubscriber::cookieName();
-
-        if ($name !== null) {
+        if ($name = AuthCookieSubscriber::cookieName()) {
             $authenticated = auth()->check();
 
             if ($authenticated && ! $request->hasCookie($name)) {
