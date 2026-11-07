@@ -2,11 +2,8 @@
 
 namespace Mehedi\StaticVel\Commands;
 
-use FilesystemIterator;
 use Illuminate\Console\Command;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
+use Illuminate\Support\Facades\File;
 
 use function config;
 
@@ -33,33 +30,17 @@ class ClearStaticPages extends Command
     {
         $path = rtrim((string) config('static-vel.path'), '/\\');
 
-        if (! is_dir($path)) {
+        if (! File::isDirectory($path)) {
             $this->info('No static pages to clear.');
 
             return self::SUCCESS;
         }
 
-        $files = 0;
+        $files = File::allFiles($path);
 
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST
-        );
+        File::deleteDirectory($path, preserve: true);
 
-        foreach ($iterator as $file) {
-            /** @var SplFileInfo $file */
-            if ($file->isDir()) {
-                @rmdir($file->getPathname());
-
-                continue;
-            }
-
-            if (@unlink($file->getPathname())) {
-                $files++;
-            }
-        }
-
-        $this->info("Cleared [{$files}] static page(s) from [{$path}].");
+        $this->info('Cleared ['.count($files)."] static page(s) from [{$path}].");
 
         return self::SUCCESS;
     }

@@ -4,6 +4,7 @@ namespace Mehedi\StaticVel\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
 use Mehedi\StaticVel\Support\StaticPagePath;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -140,7 +141,9 @@ class CaptureStaticResponse
     {
         $directory = dirname($target);
 
-        if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
+        File::ensureDirectoryExists($directory, 0775);
+
+        if (! File::isDirectory($directory)) {
             logger()->warning("static-vel: unable to create the directory [{$directory}].");
 
             return;
@@ -150,14 +153,14 @@ class CaptureStaticResponse
         // picks up a half-written page.
         $temporary = $directory.DIRECTORY_SEPARATOR.basename($target).'.'.uniqid('', true).'.tmp';
 
-        if (@file_put_contents($temporary, $content) === false) {
+        if (File::put($temporary, $content) === false) {
             logger()->warning("static-vel: unable to write the file [{$temporary}].");
 
             return;
         }
 
-        if (! @rename($temporary, $target)) {
-            @unlink($temporary);
+        if (! File::move($temporary, $target)) {
+            File::delete($temporary);
 
             logger()->warning("static-vel: unable to finalize the file [{$target}].");
         }
