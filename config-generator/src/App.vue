@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import hljs from 'highlight.js/lib/core'
+import nginx from 'highlight.js/lib/languages/nginx'
 import { buildQuery, generateConfig, validateEndpoint, type Endpoint } from './lib/nginx'
+
+hljs.registerLanguage('nginx', nginx)
 
 const settings = reactive({
     serverName: 'example.com',
@@ -35,6 +39,10 @@ const results = computed(() =>
 )
 
 const config = computed(() => generateConfig(settings, results.value))
+
+const highlightedConfig = computed(() =>
+    hljs.highlight(config.value, { language: 'nginx' }).value,
+)
 
 const copied = ref(false)
 
@@ -308,7 +316,7 @@ function endpointUrl(endpoint: Endpoint): string {
                         </button>
                     </div>
 
-                    <pre class="max-h-[32rem] overflow-auto rounded-b-xl bg-slate-50 px-6 py-4 font-mono text-xs leading-relaxed text-slate-800">{{ config }}</pre>
+                    <pre class="hljs max-h-[32rem] overflow-auto rounded-b-xl bg-slate-50 px-6 py-4 font-mono text-xs leading-relaxed"><code class="hljs" v-html="highlightedConfig"></code></pre>
                 </section>
             </div>
         </div>

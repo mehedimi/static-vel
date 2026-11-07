@@ -1,1 +1,8 @@
 @import 'tailwindcss';
+@import 'highlight.js/styles/github.css';
+
+/* The generated config sits on the slate-50 panel - keep the theme's
+   token colors but let our own background show through. */
+.hljs {
+    background: transparent;
+}
