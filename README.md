@@ -310,7 +310,7 @@ npm install
 npm run dev
 ```
 
-Once the package repository is on GitHub, the app is deployed automatically to **GitHub Pages** on every push to `main` that touches `config-generator/` (workflow: `.github/workflows/deploy-config-generator.yml`). Enable *Settings → Pages → Source: GitHub Actions* once, and the generator is available at `https://<user>.github.io/static-vel/`.
+Once the package repository is on GitHub, the app is deployed automatically to **GitHub Pages** on every push to `main` (workflow: `.github/workflows/deploy-config-generator.yml` — it builds the app and pushes `config-generator/dist` to the `gh-pages` branch). Enable *Settings → Pages → Source: Deploy from a branch → `gh-pages`* once, and the generator is available at `https://<user>.github.io/static-vel/`.
 
 ## Inertia support
 
