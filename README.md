@@ -144,12 +144,18 @@ server {
         }
 
         # Query strings that must never become part of a file name
-        # (raw or encoded slashes, backslashes) - let Laravel answer.
-        # This allowlist is mirrored by the middleware.
+        # (raw or encoded slashes, backslashes, dot segments) - let
+        # Laravel answer. This allowlist is mirrored by the middleware.
         if ($args ~ "[^A-Za-z0-9_=&%.+,~-]") {
             return 419;
         }
         if ($args ~ "(%2F|%2f|%5C|%5c)") {
+            return 419;
+        }
+
+        # Defense in depth: $args is the one input nginx does NOT
+        # normalize, so dot segments are rejected outright.
+        if ($args ~ "\.\.") {
             return 419;
         }
 
@@ -183,6 +189,14 @@ server {
     location ^~ /static-vel/ {
         internal;
 
+        # Defense in depth: $uri is already normalized by nginx (dot
+        # segments are resolved before location matching), and the
+        # middleware never stores such file names. This guard only
+        # protects against future config edits.
+        if ($uri ~ "\.\.") {
+            return 404;
+        }
+
         # Parent directory of the storage path (storage/static-vel by default).
         # Point this at your `public` directory if you store inside public/.
         root /var/www/example.com/storage;
@@ -215,6 +229,43 @@ Notes:
 - The same config works whether `handle_inertia` is `true` or `false` — with `false` no `.json` files are ever stored, so Inertia requests simply miss the cache and reach Laravel.
 - The query-string allowlist in nginx must match the one in the middleware (`A-Za-z0-9_=&%.+,~-`, plus rejecting encoded slashes) — they are the two halves of the same file-name convention.
 - Don't register application routes under the `/static-vel/` prefix — it belongs to the cache.
+
+> [!NOTE]
+> **Why the rewrites can't be tricked into directory traversal (`../`):**
+>
+> - `$uri` is **normalized by nginx before location matching** — `%XX` sequences are decoded, `.` and `..` segments are resolved, and slashes are merged. A request for `/blog/..%2f..%2fstorage` never reaches the rewrites as dots; `$uri` becomes `/storage`. So the rewritten path `/static-vel$uri.$ext` can only point *deeper*, never *up*.
+> - `$args` is the one input nginx does **not** normalize — which is exactly why it is vetted on both sides: a character allowlist, encoded-slash rejection (`%2F`, `%5C`), and an explicit `..` rejection. If anything looks off, the request goes to Laravel instead of a file lookup.
+> - The file-serving `location ^~ /static-vel/` is `internal` — an attacker can never request those URLs directly.
+> - The `if ($uri ~ "\.\.")` guard inside the cache location is pure defense in depth for future config edits.
+
+## Serving with Laravel Octane / PHP-PM
+
+Application servers (Laravel Octane with Swoole, RoadRunner or FrankenPHP, and PHP-PM) don't use PHP-FPM — the app listens on a TCP port and nginx proxies to it. Keep everything above the same, but replace the fallback and the PHP location:
+
+```nginx
+    # Fallback: hand the ORIGINAL request URI to the application server.
+    # $request_uri is untouched by the rewrites above, so Laravel sees
+    # exactly what the client asked for.
+    location @laravel {
+        proxy_pass http://127.0.0.1:8000$request_uri;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # The fastcgi location is not needed with an application server.
+```
+
+> [!IMPORTANT]
+> `proxy_pass http://127.0.0.1:8000$request_uri;` — the `$request_uri` part matters. Without it, nginx forwards the *rewritten* URI (`/static-vel/blog.x=y.html`), and Laravel would 404 on every cache miss.
+
+Notes for long-running workers:
+
+- **Octane** invokes terminable middleware after flushing the response, so capture works out of the box; the middleware itself is stateless and safe for persistent workers.
+- **PHP-PM** uses the same proxy fallback (adjust the port). Its handling of terminable middleware has historically been inconsistent across versions — after installing, verify that the first visit actually creates a file under the storage path; if it doesn't, the static layer still serves whatever was captured by other means.
+- `php artisan static-vel:clear` stays in the deploy script exactly the same.
 
 ## Authenticated visitors
 

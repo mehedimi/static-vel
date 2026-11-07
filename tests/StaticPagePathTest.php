@@ -93,6 +93,14 @@ class StaticPagePathTest extends TestCase
     }
 
     #[Test]
+    public function it_rejects_query_strings_with_dot_segments(): void
+    {
+        $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?x=..')));
+        $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?x=%2e%2e')));
+        $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?range=1..5')));
+    }
+
+    #[Test]
     public function it_accepts_a_custom_extension(): void
     {
         $this->assertSame(

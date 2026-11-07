@@ -67,12 +67,13 @@ class StaticPagePath
             return null;
         }
 
-        // The allowlist on its own accepts encoded tricks like %2F. After
-        // decoding there must be no slashes left, so the query token can
-        // never form a path segment of its own.
+        // The allowlist on its own accepts encoded tricks like %2F or
+        // %2E%2E. After decoding there must be no slashes and no dot
+        // segments left, so the query token can never form a path of its
+        // own. (nginx mirrors this by rejecting ".." in $args.)
         $decoded = rawurldecode($query);
 
-        if (Str::contains($decoded, ['/', '\\', "\0"])) {
+        if (Str::contains($decoded, ['/', '\\', "\0", '..'])) {
             return null;
         }
 
