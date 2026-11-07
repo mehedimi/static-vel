@@ -46,6 +46,8 @@ class CaptureStaticResponseTest extends TestCase
     #[Test]
     public function it_captures_query_string_variants_separately(): void
     {
+        $this->app['config']->set('static-vel.query_parameters', ['category']);
+
         $this->visit('/about');
         $this->visit('/about?category=e-commerce');
 
@@ -57,6 +59,8 @@ class CaptureStaticResponseTest extends TestCase
     #[Test]
     public function it_captures_each_parameter_combination_as_its_own_file(): void
     {
+        $this->app['config']->set('static-vel.query_parameters', ['type', 'color']);
+
         $this->visit('/products?type=shoes&color=red');
 
         $this->assertFileExists($this->staticPath.'/products.type=shoes&color=red.html');
@@ -64,8 +68,32 @@ class CaptureStaticResponseTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_capture_query_strings_by_default(): void
+    {
+        // The default whitelist is empty: query strings are never cached.
+        $this->visit('/about?category=e-commerce');
+        $this->visit('/about?page=2');
+
+        $this->assertDirectoryDoesNotExist($this->staticPath);
+    }
+
+    #[Test]
+    public function it_does_not_capture_query_strings_with_unwhitelisted_parameters(): void
+    {
+        $this->app['config']->set('static-vel.query_parameters', ['category']);
+
+        // One unwhitelisted parameter is enough to skip the capture.
+        $this->visit('/about?category=shoes&utm_source=twitter');
+        $this->visit('/about?random=value');
+
+        $this->assertDirectoryDoesNotExist($this->staticPath);
+    }
+
+    #[Test]
     public function it_does_not_capture_unsafe_query_strings(): void
     {
+        $this->app['config']->set('static-vel.query_parameters', ['category']);
+
         $this->visit('/about?category=../../etc');
 
         $this->assertDirectoryDoesNotExist($this->staticPath);

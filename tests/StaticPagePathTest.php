@@ -8,6 +8,14 @@ use PHPUnit\Framework\Attributes\Test;
 
 class StaticPagePathTest extends TestCase
 {
+    /**
+     * Whitelist the given query parameter names for the current test.
+     */
+    protected function whitelistParams(array $names): void
+    {
+        $this->app['config']->set('static-vel.query_parameters', $names);
+    }
+
     #[Test]
     public function it_maps_the_root_page_to_index(): void
     {
@@ -45,8 +53,25 @@ class StaticPagePathTest extends TestCase
     }
 
     #[Test]
+    public function it_requires_query_parameters_to_be_whitelisted(): void
+    {
+        // The default whitelist is empty.
+        $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?category=e-commerce')));
+
+        // Mixed: one unwhitelisted parameter is enough to skip the capture.
+        $this->whitelistParams(['category']);
+        $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?category=x&random=y')));
+
+        // Empty parameter names are never whitelisted.
+        $this->whitelistParams(['category']);
+        $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?=value')));
+    }
+
+    #[Test]
     public function it_maps_query_strings_into_the_file_name(): void
     {
+        $this->whitelistParams(['category']);
+
         $this->assertSame(
             $this->staticPath.'/blog.category=e-commerce.html',
             StaticPagePath::forRequest(Request::create('/blog?category=e-commerce'))
@@ -56,6 +81,8 @@ class StaticPagePathTest extends TestCase
     #[Test]
     public function it_maps_the_root_page_with_a_query_string(): void
     {
+        $this->whitelistParams(['page']);
+
         $this->assertSame(
             $this->staticPath.'/index.page=2.json',
             StaticPagePath::forRequest(Request::create('/?page=2'), 'json')
@@ -65,6 +92,8 @@ class StaticPagePathTest extends TestCase
     #[Test]
     public function it_keeps_multiple_query_parameters_verbatim(): void
     {
+        $this->whitelistParams(['type', 'color', 'size']);
+
         $this->assertSame(
             $this->staticPath.'/products.type=shoes&color=red&size=42.html',
             StaticPagePath::forRequest(Request::create('/products?type=shoes&color=red&size=42'))
@@ -74,6 +103,8 @@ class StaticPagePathTest extends TestCase
     #[Test]
     public function it_treats_different_parameter_orders_as_different_files(): void
     {
+        $this->whitelistParams(['a', 'b']);
+
         $this->assertSame(
             $this->staticPath.'/blog.a=1&b=2.html',
             StaticPagePath::forRequest(Request::create('/blog?a=1&b=2'))
@@ -87,6 +118,8 @@ class StaticPagePathTest extends TestCase
     #[Test]
     public function it_rejects_unsafe_query_strings(): void
     {
+        $this->whitelistParams(['category', 'x']);
+
         $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?category=../../etc')));
         $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?category=..%2F..%2Fetc')));
         $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?x='.str_repeat('a', 200))));
@@ -95,6 +128,8 @@ class StaticPagePathTest extends TestCase
     #[Test]
     public function it_rejects_query_strings_with_dot_segments(): void
     {
+        $this->whitelistParams(['x', 'range']);
+
         $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?x=..')));
         $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?x=%2e%2e')));
         $this->assertNull(StaticPagePath::forRequest(Request::create('/blog?range=1..5')));

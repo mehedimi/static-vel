@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `query_parameters` config whitelist: only requests whose query parameter names are whitelisted are captured. Empty by default, so query strings are never cached unless explicitly allowed - protecting the storage directory from flooding.
 - `static-vel` terminable middleware: captures `200` HTML responses to `GET` requests after they are sent, storing them as `<path>.html` with `/` stored as `index`.
 - Query strings embedded verbatim into the file name (`/blog?category=x` -> `blog.category=x.html`), with traversal-safe validation mirrored on both the capture and the nginx side.
 - `handle_inertia` config: captures Inertia JSON payloads as `<path>.json` so client-side navigations are served statically; partial reloads are never captured.

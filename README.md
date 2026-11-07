@@ -101,6 +101,15 @@ The raw query string becomes part of the file name, so every variant is cached o
 
 The rules:
 
+- **Every query parameter name must be whitelisted** in the `query_parameters` config option. With the default empty whitelist, query strings are **never cached** — those requests always reach Laravel. This prevents visitors from flooding the storage directory with endless made-up query strings:
+
+  ```php
+  // config/static-vel.php
+  'query_parameters' => ['category', 'page'],
+  ```
+
+  One unwhitelisted parameter is enough to skip the capture (`?category=x&random=y` is never cached). Values stay dynamic: every distinct value of a whitelisted parameter gets its own file.
+
 - The query string is used **verbatim** (raw, exactly as sent). `?category=e%2Dcommerce` and `?category=e-commerce` are two different cache files, and so are `?a=1&b=2` and `?b=2&a=1`. Verbatim is what lets nginx reconstruct the file name from `$args` without any hashing.
 - Query strings longer than 128 characters, or containing anything outside `A-Za-z0-9_=&%.+,~-` (after decoding: no slashes or backslashes) are **never cached** — those requests always reach Laravel. This keeps path traversal (`?x=..%2F..%2Fetc`) out of the file name, on both the capture and the nginx side.
 - First capture wins per exact URL — a captured variant keeps serving until the cache is cleared.
@@ -347,6 +356,7 @@ Published as `config/static-vel.php`:
 | `path` | `env('STATIC_VEL_PATH', storage_path('static-vel'))` | Directory captured responses are written to. |
 | `handle_inertia` | `env('STATIC_VEL_HANDLE_INERTIA', true)` | Also capture Inertia JSON payloads as `<path>.json`. |
 | `auth_cookie` | `env('STATIC_VEL_AUTH_COOKIE', 'static_vel_auth')` | Marker cookie for authenticated visitors. Set to `null` to disable the auth handling. |
+| `query_parameters` | `[]` | Whitelist of query parameter names that may be captured. Empty (default) = query strings are never cached. |
 
 ## Security notes
 
@@ -355,6 +365,7 @@ Published as `config/static-vel.php`:
 - Path traversal (`/..%2F...`) is rejected; files can never be written outside the configured directory.
 - The nginx `internal` directive on the cache location keeps captured files from being requested as URLs directly.
 - First capture wins per exact URL (path + query string) — see the warning above.
+- Cache flooding is bounded: only whitelisted query parameter names ever create files, and the file name itself is capped at 128 query-string characters. Still, values are dynamic — watch the storage directory on high-traffic sites, and use `static-vel:clear` / `STATIC_VEL_ENABLED=false` as levers.
 
 ## Testing
 

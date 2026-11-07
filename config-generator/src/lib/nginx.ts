@@ -148,6 +148,21 @@ export function generateConfig(settings: Settings, results: Array<{ endpoint: En
         return `#   ${url.padEnd(50)}${ok ? `-> ${prefix}/${file}.html` : `!! ${warning}`}`
     })
 
+    // Query parameters only create cache files when whitelisted in the
+    // package config - tell the user exactly which names to allow.
+    const paramNames = [...new Set(results.flatMap(({ endpoint }) => endpoint.params))]
+        .filter((name) => name !== '')
+        .sort()
+
+    const whitelistLines = paramNames.length > 0
+        ? [
+            '# Whitelist these query parameter names in config/static-vel.php,',
+            '# otherwise requests carrying them are never captured:',
+            `#     'query_parameters' => ['${paramNames.join("', '")}'],`,
+            '#',
+        ]
+        : []
+
     const cookieGuard = settings.authCookie
         ? [
             '        # Logged-in visitors always get fresh content from Laravel.',
@@ -227,6 +242,7 @@ export function generateConfig(settings: Settings, results: Array<{ endpoint: En
         `# Endpoints served from the ${prefix} cache:`,
         ...endpointLines,
         '#',
+        ...whitelistLines,
         '# Query parameter values are dynamic: every distinct query string is',
         '# cached under its own file name, as long as it stays within the',
         '# allowlist rules enforced by the middleware and mirrored below.',
