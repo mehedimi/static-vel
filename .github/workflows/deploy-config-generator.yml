@@ -24,7 +24,7 @@ jobs:
 
       - name: Install Dependencies 🔧
         working-directory: config-generator
-        run: pnpm install
+        run: pnpm ci
 
       - name: Build 🔧
         working-directory: config-generator
