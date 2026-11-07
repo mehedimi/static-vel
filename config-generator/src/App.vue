@@ -8,6 +8,7 @@ const settings = reactive({
     storageRoot: '/var/www/example.com/storage',
     cachePrefix: 'static-vel',
     authCookie: 'static_vel_auth',
+    handleInertia: true,
     runtime: 'fpm',
     fpmSocket: 'unix:/var/run/php/php8.3-fpm.sock',
     octaneAddress: '127.0.0.1:8000',
@@ -17,6 +18,7 @@ const settings = reactive({
     storageRoot: string
     cachePrefix: string
     authCookie: string
+    handleInertia: boolean
     runtime: 'fpm' | 'octane'
     fpmSocket: string
     octaneAddress: string
@@ -126,6 +128,21 @@ function endpointUrl(endpoint: Endpoint): string {
                                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none"
                             />
                         </label>
+                    </div>
+
+                    <div class="mt-5">
+                        <span class="mb-2 block text-xs font-medium text-slate-500">Inertia</span>
+                        <label class="flex items-center gap-2 text-sm text-slate-600">
+                            <input
+                                v-model="settings.handleInertia"
+                                type="checkbox"
+                                class="h-4 w-4 accent-emerald-600"
+                            />
+                            Handle Inertia (serve cached <code class="mx-1">.json</code> payloads for X-Inertia visits)
+                        </label>
+                        <p v-if="!settings.handleInertia" class="mt-2 text-xs text-slate-500">
+                            X-Inertia requests always reach the application — only HTML page loads are served statically.
+                        </p>
                     </div>
 
                     <div class="mt-5">

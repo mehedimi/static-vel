@@ -22,6 +22,7 @@ export interface Settings {
     storageRoot: string
     cachePrefix: string
     authCookie: string
+    handleInertia: boolean
     runtime: 'fpm' | 'octane'
     fpmSocket: string
     octaneAddress: string
@@ -157,6 +158,43 @@ export function generateConfig(settings: Settings, results: Array<{ endpoint: En
         ]
         : []
 
+    // With Inertia handling disabled, no .json files are ever captured -
+    // X-Inertia (JSON) visits must always reach the application instead of
+    // being answered with a cached HTML page.
+    const inertiaGuard = settings.handleInertia
+        ? []
+        : [
+            '        # Inertia handling is disabled: X-Inertia (JSON) visits',
+            '        # always reach the application.',
+            '        if ($http_x_inertia) {',
+            '            return 419;',
+            '        }',
+            '',
+        ]
+
+    const extSelection = settings.handleInertia
+        ? [
+            '        # Inertia navigations get the cached JSON payload, browsers get HTML.',
+            '        set $ext html;',
+            '        if ($http_x_inertia) {',
+            '            set $ext json;',
+            '        }',
+            '',
+        ]
+        : []
+
+    const ext = settings.handleInertia ? '$ext' : 'html'
+
+    const staticQueryExt = settings.handleInertia
+        ? [
+            '        set $ext html;',
+            '        if ($http_x_inertia) {',
+            '            set $ext json;',
+            '        }',
+            '',
+        ]
+        : []
+
     const fallback = settings.runtime === 'octane'
         ? [
             '    # Fallback: hand the ORIGINAL request URI to the application server.',
@@ -193,7 +231,9 @@ export function generateConfig(settings: Settings, results: Array<{ endpoint: En
         '# cached under its own file name, as long as it stays within the',
         '# allowlist rules enforced by the middleware and mirrored below.',
         '#',
-        '# Every file also exists as .json when it was captured from an Inertia visit.',
+        settings.handleInertia
+            ? '# Every file also exists as .json when it was captured from an Inertia visit.'
+            : '# Inertia handling is disabled: X-Inertia visits always reach the application.',
         '',
         'server {',
         '    listen 80;',
@@ -228,30 +268,22 @@ export function generateConfig(settings: Settings, results: Array<{ endpoint: En
         '            return 419;',
         '        }',
         '',
+        ...inertiaGuard,
         '        # Requests with a query string are served from their own file.',
         '        if ($args) {',
         '            return 418;',
         '        }',
         '',
-        '        # Inertia navigations get the cached JSON payload, browsers get HTML.',
-        '        set $ext html;',
-        '        if ($http_x_inertia) {',
-        '            set $ext json;',
-        '        }',
-        '',
-        `        rewrite ^/$ /${prefix}/index.$ext last;`,
-        `        rewrite ^ /${prefix}$uri.$ext last;`,
+        ...extSelection,
+        `        rewrite ^/$ /${prefix}/index.${ext} last;`,
+        `        rewrite ^ /${prefix}$uri.${ext} last;`,
         '    }',
         '',
         '    # 2. Same as above, but the file name carries the query string.',
         '    location @static_query {',
-        '        set $ext html;',
-        '        if ($http_x_inertia) {',
-        '            set $ext json;',
-        '        }',
-        '',
-        `        rewrite ^/$ /${prefix}/index.$args.$ext last;`,
-        `        rewrite ^ /${prefix}$uri.$args.$ext last;`,
+        ...staticQueryExt,
+        `        rewrite ^/$ /${prefix}/index.$args.${ext} last;`,
+        `        rewrite ^ /${prefix}$uri.$args.${ext} last;`,
         '    }',
         '',
         `    # 3. Serve the rewritten path from the ${settings.storageRoot}/${prefix} directory.`,
