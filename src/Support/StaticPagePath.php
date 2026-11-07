@@ -3,8 +3,11 @@
 namespace Mehedi\StaticVel\Support;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 use function config;
+use function str;
 
 class StaticPagePath
 {
@@ -19,7 +22,7 @@ class StaticPagePath
      */
     public static function forRequest(Request $request, string $extension = 'html'): ?string
     {
-        $segments = static::sanitizedSegments($request->decodedPath());
+        $segments = static::safeSegments($request->decodedPath());
 
         if ($segments === null) {
             return null;
@@ -29,13 +32,13 @@ class StaticPagePath
         // Request::getQueryString() is not usable here: Symfony canonicalizes
         // it (parse_str + ksort + rebuild), so the order would change and the
         // file name would never match what nginx reconstructs.
-        $query = static::queryToken($request->server->get('QUERY_STRING'));
+        $query = static::safeQuery($request->server->get('QUERY_STRING'));
 
         if ($query === null) {
             return null;
         }
 
-        $file = ($segments === [] ? 'index' : implode('/', $segments))
+        $file = ($segments->isEmpty() ? 'index' : $segments->implode('/'))
             .($query === '' ? '' : '.'.$query);
 
         return static::directory().$file.'.'.$extension;
@@ -51,20 +54,16 @@ class StaticPagePath
      * string when the request has no query string. Null when the query
      * string is unsafe to cache.
      */
-    protected static function queryToken(?string $query): ?string
+    protected static function safeQuery(?string $query): ?string
     {
         if (empty($query)) {
             return '';
         }
 
-        if (strlen($query) > static::MAX_QUERY_LENGTH) {
-            return null;
-        }
-
         // Only file-name safe characters are embedded verbatim. nginx
         // replicates this exact allowlist, so it can reconstruct the same
         // file name from $args.
-        if (! preg_match('/^[A-Za-z0-9_=&%.+,~-]+$/', $query)) {
+        if (strlen($query) > static::MAX_QUERY_LENGTH || ! Str::isMatch('/^[A-Za-z0-9_=&%.+,~-]+$/', $query)) {
             return null;
         }
 
@@ -73,7 +72,7 @@ class StaticPagePath
         // never form a path segment of its own.
         $decoded = rawurldecode($query);
 
-        if (str_contains($decoded, '/') || str_contains($decoded, '\\') || str_contains($decoded, "\0")) {
+        if (Str::contains($decoded, ['/', '\\', "\0"])) {
             return null;
         }
 
@@ -84,24 +83,16 @@ class StaticPagePath
      * Split the request path into safe segments, or return null when it
      * attempts to traverse out of the storage directory.
      *
-     * @return list<string>|null
+     * @return Collection<int, string>|null
      */
-    protected static function sanitizedSegments(string $path): ?array
+    protected static function safeSegments(string $path): ?Collection
     {
-        $segments = [];
+        $segments = str($path)->replace('\\', '/')->explode('/');
 
-        foreach (explode('/', str_replace('\\', '/', $path)) as $segment) {
-            if ($segment === '' || $segment === '.') {
-                continue;
-            }
-
-            if ($segment === '..' || str_contains($segment, "\0")) {
-                return null;
-            }
-
-            $segments[] = $segment;
+        if ($segments->contains(fn (string $segment) => $segment === '..' || str_contains($segment, "\0"))) {
+            return null;
         }
 
-        return $segments;
+        return $segments->reject(fn (string $segment) => in_array($segment, ['', '.']))->values();
     }
 }
