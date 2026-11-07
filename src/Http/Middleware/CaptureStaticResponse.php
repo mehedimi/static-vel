@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
+use Mehedi\StaticVel\CacheKey;
 use Mehedi\StaticVel\Support\StaticPagePath;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -85,6 +86,14 @@ class CaptureStaticResponse
      */
     protected function store(Request $request, Response $response): void
     {
+        // By default no query parameters are allowed: unless the
+        // application opted in via CacheKey::allowQueryKeys() (and every
+        // request parameter is allowed), query strings never produce
+        // cache files and the request stays dynamic.
+        if (! $this->queryMayBeCached($request)) {
+            return;
+        }
+
         // Inertia partial reloads return only a subset of the page props -
         // never cache them, they would overwrite the full payload.
         if ($request->hasHeader('X-Inertia-Partial-Component')) {
@@ -120,6 +129,39 @@ class CaptureStaticResponse
         }
 
         $this->write($target, $content);
+    }
+
+    /**
+     * Determine whether the request's query string may become part of the
+     * cache file name. By default no query parameters are allowed; the
+     * application opts in per request via CacheKey::allowQueryKeys(), and
+     * every parameter in the request must be allowed.
+     */
+    protected function queryMayBeCached(Request $request): bool
+    {
+        $query = $request->server->get('QUERY_STRING');
+
+        if (! is_string($query) || $query === '') {
+            return true;
+        }
+
+        $allowed = CacheKey::allowedQueryKeys($request);
+
+        if ($allowed === []) {
+            return false;
+        }
+
+        foreach (explode('&', $query) as $pair) {
+            if ($pair === '') {
+                continue;
+            }
+
+            if (! in_array(explode('=', $pair, 2)[0], $allowed, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

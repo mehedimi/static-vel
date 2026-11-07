@@ -72,13 +72,6 @@ class StaticPagePath
             return '';
         }
 
-        // Only whitelisted parameter names may create cache files, so
-        // visitors can never flood the storage directory with arbitrary
-        // query strings.
-        if (! static::queryParametersAreWhitelisted($query)) {
-            return null;
-        }
-
         // Only file-name safe characters are embedded verbatim. nginx
         // replicates this exact allowlist, so it can reconstruct the same
         // file name from $args.
@@ -97,33 +90,6 @@ class StaticPagePath
         }
 
         return $query;
-    }
-
-    /**
-     * Every query parameter name in the raw query string must be
-     * whitelisted in the `query_parameters` config. Names are compared as
-     * they appear in the URL. With an empty whitelist (the default), query
-     * strings are never captured.
-     */
-    protected static function queryParametersAreWhitelisted(string $query): bool
-    {
-        $allowed = (array) config('static-vel.query_parameters', []);
-
-        if ($allowed === []) {
-            return false;
-        }
-
-        foreach (explode('&', $query) as $pair) {
-            if ($pair === '') {
-                continue;
-            }
-
-            if (! in_array(explode('=', $pair, 2)[0], $allowed, true)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

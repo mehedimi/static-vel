@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `query_parameters` config whitelist: only requests whose query parameter names are whitelisted are captured. Empty by default, so query strings are never cached unless explicitly allowed - protecting the storage directory from flooding.
+- `CacheKey::allowQueryKeys()` service: query strings are never cached by default. Applications opt in per request - typically `CacheKey::allowQueryKeys(array_keys($request->validate([...])))` - so only validated parameter names and values can end up in cache file names, and visitors cannot flood the storage directory with made-up query strings.
 - `static-vel` terminable middleware: captures `200` HTML responses to `GET` requests after they are sent, storing them as `<path>.html` with `/` stored as `index`.
 - Query strings embedded verbatim into the file name (`/blog?category=x` -> `blog.category=x.html`), with traversal-safe validation mirrored on both the capture and the nginx side.
 - `handle_inertia` config: captures Inertia JSON payloads as `<path>.json` so client-side navigations are served statically; partial reloads are never captured.

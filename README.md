@@ -88,28 +88,41 @@ Files are written atomically (temporary file + `rename`), so nginx never picks u
 - Inertia **partial reloads** (`X-Inertia-Partial-Component`) — they exist to fetch fresh data, and caching them would overwrite the full payload with a subset of props
 - Inertia visits, when `handle_inertia` is `false`
 - Requests carrying the [auth marker cookie](#authenticated-visitors) — authenticated visitors' responses must never overwrite the guest cache
+- Requests with query strings whose parameters were not allowed via [`CacheKey::allowQueryKeys()`](#query-strings)
 - Requests with an [unsafe query string](#query-strings) (too long, or containing characters that could form a path)
 - Paths attempting traversal (`/..%2Fetc/passwd`)
 
 ### Query strings
 
-The raw query string becomes part of the file name, so every variant is cached on its own:
+By default, query strings **never produce cache files** — `/blog?category=x` is served by Laravel on every visit, and only the clean `/blog` path is cached. This means visitors cannot flood the storage directory with made-up query strings.
 
-- `/blog` → `blog.html`
-- `/blog?category=e-commerce` → `blog.category=e-commerce.html`
-- `/blog?page=2` → `blog.page=2.html`
+To cache query variants, the application opts in **per request** with the `CacheKey` service — ideally right after validating the parameter values with Laravel's validation API, so only values that passed your rules can ever end up in a cache file name:
+
+```php
+use Mehedi\StaticVel\CacheKey;
+
+// App\Http\Controllers\BlogController
+public function index(Request $request)
+{
+    $validated = $request->validate([
+        'category' => ['nullable', 'string', 'max:50'],
+        'page' => ['nullable', 'integer', 'min:1'],
+    ]);
+
+    // Only validated keys become part of the cache key:
+    CacheKey::allowQueryKeys(array_keys($validated));
+
+    // The raw query string becomes part of the file name, verbatim:
+    // /blog?category=e-commerce -> blog.category=e-commerce.html
+}
+```
 
 The rules:
 
-- **Every query parameter name must be whitelisted** in the `query_parameters` config option. With the default empty whitelist, query strings are **never cached** — those requests always reach Laravel. This prevents visitors from flooding the storage directory with endless made-up query strings:
-
-  ```php
-  // config/static-vel.php
-  'query_parameters' => ['category', 'page'],
-  ```
-
-  One unwhitelisted parameter is enough to skip the capture (`?category=x&random=y` is never cached). Values stay dynamic: every distinct value of a whitelisted parameter gets its own file.
-
+- **No allowed keys, no cached query.** Unless the request's controller calls `CacheKey::allowQueryKeys()`, every query variant stays dynamic.
+- **Every parameter must be allowed.** One request parameter outside the allowed keys (`?category=x&madeup=y`) skips the capture for that request.
+- **Validation gates the values.** A request whose value fails your rules never returns a `200` response, so it is never captured — malicious visitors cannot inject data into a cache file name.
+- **Keys don't leak.** Allowed keys are stored on the request itself and die with it — they never spill into other requests, including under Octane / PHP-PM workers.
 - The query string is used **verbatim** (raw, exactly as sent). `?category=e%2Dcommerce` and `?category=e-commerce` are two different cache files, and so are `?a=1&b=2` and `?b=2&a=1`. Verbatim is what lets nginx reconstruct the file name from `$args` without any hashing.
 - Query strings longer than 128 characters, or containing anything outside `A-Za-z0-9_=&%.+,~-` (after decoding: no slashes or backslashes) are **never cached** — those requests always reach Laravel. This keeps path traversal (`?x=..%2F..%2Fetc`) out of the file name, on both the capture and the nginx side.
 - First capture wins per exact URL — a captured variant keeps serving until the cache is cleared.
@@ -356,7 +369,6 @@ Published as `config/static-vel.php`:
 | `path` | `env('STATIC_VEL_PATH', storage_path('static-vel'))` | Directory captured responses are written to. |
 | `handle_inertia` | `env('STATIC_VEL_HANDLE_INERTIA', true)` | Also capture Inertia JSON payloads as `<path>.json`. |
 | `auth_cookie` | `env('STATIC_VEL_AUTH_COOKIE', 'static_vel_auth')` | Marker cookie for authenticated visitors. Set to `null` to disable the auth handling. |
-| `query_parameters` | `[]` | Whitelist of query parameter names that may be captured. Empty (default) = query strings are never cached. |
 
 ## Security notes
 
@@ -365,7 +377,7 @@ Published as `config/static-vel.php`:
 - Path traversal (`/..%2F...`) is rejected; files can never be written outside the configured directory.
 - The nginx `internal` directive on the cache location keeps captured files from being requested as URLs directly.
 - First capture wins per exact URL (path + query string) — see the warning above.
-- Cache flooding is bounded: only whitelisted query parameter names ever create files, and the file name itself is capped at 128 query-string characters. Still, values are dynamic — watch the storage directory on high-traffic sites, and use `static-vel:clear` / `STATIC_VEL_ENABLED=false` as levers.
+- Cache flooding is dead by construction: query strings never create files unless the application allowed the keys and the values passed validation. The file name itself is still capped at 128 query-string characters — and `static-vel:clear` / `STATIC_VEL_ENABLED=false` remain the operational levers.
 
 ## Testing
 

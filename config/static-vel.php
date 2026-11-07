@@ -65,26 +65,4 @@ return [
 
     'auth_cookie' => env('STATIC_VEL_AUTH_COOKIE', 'static_vel_auth'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Whitelisted query parameters
-    |--------------------------------------------------------------------------
-    |
-    | Every query parameter name must be whitelisted here for the request to
-    | be captured - otherwise the request is always handled by the
-    | application. This prevents visitors from flooding the storage
-    | directory by requesting endless made-up query strings.
-    |
-    | Values stay dynamic: `/blog?category=x` and `/blog?category=y` are
-    | cached as two files, as long as `category` is whitelisted and the
-    | query string stays within the safety rules (see README).
-    |
-    | With the default empty whitelist, query strings are never captured.
-    |
-    */
-
-    'query_parameters' => [
-        //
-    ],
-
 ];

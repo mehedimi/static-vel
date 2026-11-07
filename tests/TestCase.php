@@ -7,6 +7,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
+use Mehedi\StaticVel\CacheKey;
 use Mehedi\StaticVel\StaticVelServiceProvider;
 use Orchestra\Testbench\TestCase as TestbenchTestCase;
 use RecursiveDirectoryIterator;
@@ -62,6 +63,13 @@ abstract class TestCase extends TestbenchTestCase
 
             $router->get('/about', fn () => '<html>about</html>');
             $router->post('/about', fn () => '<html>about</html>');
+            $router->get('/blog', function (Request $request) {
+                // Simulates a controller that validates its query parameters
+                // and opts the validated keys into the cache key.
+                CacheKey::allowQueryKeys(['category', 'page']);
+
+                return '<html>blog</html>';
+            });
             $router->get('/products/{id}', fn (string $id) => "<html>product {$id}</html>");
             $router->get('/counter', function () {
                 static $count = 0;

@@ -44,33 +44,30 @@ class CaptureStaticResponseTest extends TestCase
     }
 
     #[Test]
-    public function it_captures_query_string_variants_separately(): void
+    public function it_captures_query_string_variants_for_allowed_keys(): void
     {
-        $this->app['config']->set('static-vel.query_parameters', ['category']);
+        $this->visit('/blog?category=e-commerce');
+        $this->visit('/blog?page=2');
 
-        $this->visit('/about');
-        $this->visit('/about?category=e-commerce');
-
-        $this->assertFileExists($this->staticPath.'/about.html');
-        $this->assertFileExists($this->staticPath.'/about.category=e-commerce.html');
-        $this->assertSame('<html>about</html>', file_get_contents($this->staticPath.'/about.category=e-commerce.html'));
+        $this->assertFileExists($this->staticPath.'/blog.category=e-commerce.html');
+        $this->assertFileExists($this->staticPath.'/blog.page=2.html');
+        $this->assertSame('<html>blog</html>', file_get_contents($this->staticPath.'/blog.category=e-commerce.html'));
     }
 
     #[Test]
     public function it_captures_each_parameter_combination_as_its_own_file(): void
     {
-        $this->app['config']->set('static-vel.query_parameters', ['type', 'color']);
+        $this->visit('/blog?page=2&category=e-commerce');
 
-        $this->visit('/products?type=shoes&color=red');
-
-        $this->assertFileExists($this->staticPath.'/products.type=shoes&color=red.html');
-        $this->assertFileDoesNotExist($this->staticPath.'/products.html');
+        $this->assertFileExists($this->staticPath.'/blog.page=2&category=e-commerce.html');
+        $this->assertFileDoesNotExist($this->staticPath.'/blog.html');
     }
 
     #[Test]
     public function it_does_not_capture_query_strings_by_default(): void
     {
-        // The default whitelist is empty: query strings are never cached.
+        // The /about route never calls allowQueryKeys: query strings are
+        // never cached there, whatever they contain.
         $this->visit('/about?category=e-commerce');
         $this->visit('/about?page=2');
 
@@ -78,23 +75,29 @@ class CaptureStaticResponseTest extends TestCase
     }
 
     #[Test]
-    public function it_does_not_capture_query_strings_with_unwhitelisted_parameters(): void
+    public function it_does_not_capture_query_strings_with_unallowed_parameters(): void
     {
-        $this->app['config']->set('static-vel.query_parameters', ['category']);
-
-        // One unwhitelisted parameter is enough to skip the capture.
-        $this->visit('/about?category=shoes&utm_source=twitter');
-        $this->visit('/about?random=value');
+        // One parameter outside the allowed keys is enough to skip the capture.
+        $this->visit('/blog?category=shoes&madeup=value');
+        $this->visit('/blog?madeup=1');
 
         $this->assertDirectoryDoesNotExist($this->staticPath);
     }
 
     #[Test]
+    public function it_does_not_leak_allowed_query_keys_across_requests(): void
+    {
+        $this->visit('/blog?category=e-commerce');
+        $this->visit('/about?category=e-commerce');
+
+        $this->assertFileExists($this->staticPath.'/blog.category=e-commerce.html');
+        $this->assertDirectoryDoesNotExist($this->staticPath.'/about.html');
+    }
+
+    #[Test]
     public function it_does_not_capture_unsafe_query_strings(): void
     {
-        $this->app['config']->set('static-vel.query_parameters', ['category']);
-
-        $this->visit('/about?category=../../etc');
+        $this->visit('/blog?category=../../etc');
 
         $this->assertDirectoryDoesNotExist($this->staticPath);
     }
