@@ -298,6 +298,18 @@ Notes:
 - Auth detection is cookie-based. Visitors authenticated purely by API tokens (Authorization headers) are treated as guests by nginx.
 - Avoid dashes in the cookie name — nginx exposes cookies as `$cookie_<name>` variables.
 
+## Nginx config generator
+
+A small Vue + Tailwind app ships in [`nginx-generator/`](nginx-generator) to build the nginx configuration for you: enter your endpoints (each with optional query parameters), your domain, roots, auth cookie, and whether you run PHP-FPM or Octane — it generates the complete server block and shows the exact cache file every endpoint maps to, warning you about query strings that will never be cached.
+
+It is a development tool only — `export-ignore`d from dist archives and not required by the package:
+
+```bash
+cd nginx-generator
+npm install
+npm run dev
+```
+
 ## Inertia support
 
 Set `handle_inertia` to `true` (the default) and static-vel handles the full picture:
