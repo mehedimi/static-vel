@@ -20,7 +20,10 @@ jobs:
           node-version: "22"
 
       - name: Install pnpm
-        run: npm install -g pnpm
+        # Pinned to the same version used locally: newer pnpm releases
+        # enforce a minimumReleaseAge supply-chain policy that can reject
+        # recently published lockfile entries.
+        run: npm install -g pnpm@11.1.2
 
       - name: Install Dependencies 🔧
         working-directory: config-generator
