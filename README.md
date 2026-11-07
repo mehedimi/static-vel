@@ -1,6 +1,6 @@
 ![static-vel — effortless static response caching for Laravel](https://cdn.ogdynamic.com/c/01m6tphaa7z9k1s1z4kps6r3c5)
 
-# static-vel
+# Static response caching for Laravel
 
 Effortless static response caching for Laravel: capture rendered responses **after** they are sent, then let nginx serve them as plain files — without touching Laravel at all.
 

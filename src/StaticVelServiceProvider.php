@@ -2,6 +2,8 @@
 
 namespace Mehedi\StaticVel;
 
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
 use Mehedi\StaticVel\Commands\ClearStaticPages;
@@ -21,7 +23,7 @@ class StaticVelServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(Dispatcher $events, Router $router): void
     {
         $this->publishes([
             __DIR__.'/../config/static-vel.php' => config_path('static-vel.php'),
@@ -34,10 +36,10 @@ class StaticVelServiceProvider extends ServiceProvider
         }
 
         if (AuthCookieSubscriber::cookieName()) {
-            $this->app['events']->subscribe(AuthCookieSubscriber::class);
+            $events->subscribe(AuthCookieSubscriber::class);
         }
 
-        $this->app['router']->aliasMiddleware('static-vel', CaptureStaticResponse::class);
-        $this->app['router']->aliasMiddleware('static-vel.auth', SyncAuthCookie::class);
+        $router->aliasMiddleware('static-vel', CaptureStaticResponse::class);
+        $router->aliasMiddleware('static-vel.auth', SyncAuthCookie::class);
     }
 }

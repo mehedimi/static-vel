@@ -73,7 +73,11 @@ class AuthCookieSubscriber
     {
         $name = config('static-vel.auth_cookie');
 
-        return empty($name) ? null : (string) $name;
+        if (! is_string($name) || $name === '') {
+            return null;
+        }
+
+        return $name;
     }
 
     /**
@@ -85,6 +89,9 @@ class AuthCookieSubscriber
      */
     protected static function pathAndDomain(): array
     {
-        return [(string) config('session.path', '/'), config('session.domain')];
+        $path = config('session.path', '/');
+        $domain = config('session.domain');
+
+        return [is_string($path) ? $path : '/', is_string($domain) ? $domain : null];
     }
 }

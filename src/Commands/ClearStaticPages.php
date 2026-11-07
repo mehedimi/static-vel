@@ -4,8 +4,7 @@ namespace Mehedi\StaticVel\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-
-use function config;
+use Mehedi\StaticVel\Support\StaticPagePath;
 
 class ClearStaticPages extends Command
 {
@@ -28,7 +27,7 @@ class ClearStaticPages extends Command
      */
     public function handle(): int
     {
-        $path = rtrim((string) config('static-vel.path'), '/\\');
+        $path = StaticPagePath::baseDirectory();
 
         if (! File::isDirectory($path)) {
             $this->info('No static pages to clear.');

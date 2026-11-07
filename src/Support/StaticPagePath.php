@@ -32,7 +32,9 @@ class StaticPagePath
         // Request::getQueryString() is not usable here: Symfony canonicalizes
         // it (parse_str + ksort + rebuild), so the order would change and the
         // file name would never match what nginx reconstructs.
-        $query = static::safeQuery($request->server->get('QUERY_STRING'));
+        $rawQuery = $request->server->get('QUERY_STRING');
+
+        $query = static::safeQuery(is_string($rawQuery) ? $rawQuery : null);
 
         if ($query === null) {
             return null;
@@ -44,9 +46,19 @@ class StaticPagePath
         return static::directory().$file.'.'.$extension;
     }
 
+    /**
+     * The configured storage directory, without a trailing slash.
+     */
+    public static function baseDirectory(): string
+    {
+        $path = config('static-vel.path');
+
+        return rtrim(is_string($path) ? $path : '', '/\\');
+    }
+
     protected static function directory(): string
     {
-        return rtrim((string) config('static-vel.path'), '/\\').'/';
+        return static::baseDirectory().'/';
     }
 
     /**
