@@ -1,6 +1,6 @@
 <?php
 
-namespace Mehedimi\StaticVel\Tests;
+namespace Mehedi\StaticVel\Tests;
 
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use PHPUnit\Framework\Attributes\Test;

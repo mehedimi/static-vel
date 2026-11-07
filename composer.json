@@ -28,8 +28,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Mehedimi\\StaticVel\\": "src/",
-            "Mehedimi\\StaticVel\\Tests\\": "tests/"
+            "Mehedi\\StaticVel\\": "src/",
+            "Mehedi\\StaticVel\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -43,7 +43,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Mehedimi\\StaticVel\\StaticVelServiceProvider"
+                "Mehedi\\StaticVel\\StaticVelServiceProvider"
             ]
         }
     },

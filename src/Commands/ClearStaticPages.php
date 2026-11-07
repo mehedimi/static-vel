@@ -1,6 +1,6 @@
 <?php
 
-namespace Mehedimi\StaticVel\Commands;
+namespace Mehedi\StaticVel\Commands;
 
 use FilesystemIterator;
 use Illuminate\Console\Command;

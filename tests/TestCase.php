@@ -1,14 +1,14 @@
 <?php
 
-namespace Mehedimi\StaticVel\Tests;
+namespace Mehedi\StaticVel\Tests;
 
 use FilesystemIterator;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
-use Mehedimi\StaticVel\Http\Middleware\SyncAuthCookie;
-use Mehedimi\StaticVel\StaticVelServiceProvider;
+use Mehedi\StaticVel\Http\Middleware\SyncAuthCookie;
+use Mehedi\StaticVel\StaticVelServiceProvider;
 use Orchestra\Testbench\TestCase as TestbenchTestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;

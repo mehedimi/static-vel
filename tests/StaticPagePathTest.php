@@ -1,9 +1,9 @@
 <?php
 
-namespace Mehedimi\StaticVel\Tests;
+namespace Mehedi\StaticVel\Tests;
 
 use Illuminate\Http\Request;
-use Mehedimi\StaticVel\Support\StaticPagePath;
+use Mehedi\StaticVel\Support\StaticPagePath;
 use PHPUnit\Framework\Attributes\Test;
 
 class StaticPagePathTest extends TestCase

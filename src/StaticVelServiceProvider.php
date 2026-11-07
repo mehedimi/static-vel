@@ -1,12 +1,12 @@
 <?php
 
-namespace Mehedimi\StaticVel;
+namespace Mehedi\StaticVel;
 
 use Illuminate\Support\ServiceProvider;
-use Mehedimi\StaticVel\Auth\AuthCookieSubscriber;
-use Mehedimi\StaticVel\Commands\ClearStaticPages;
-use Mehedimi\StaticVel\Http\Middleware\CaptureStaticResponse;
-use Mehedimi\StaticVel\Http\Middleware\SyncAuthCookie;
+use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
+use Mehedi\StaticVel\Commands\ClearStaticPages;
+use Mehedi\StaticVel\Http\Middleware\CaptureStaticResponse;
+use Mehedi\StaticVel\Http\Middleware\SyncAuthCookie;
 
 class StaticVelServiceProvider extends ServiceProvider
 {

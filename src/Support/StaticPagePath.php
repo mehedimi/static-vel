@@ -1,6 +1,6 @@
 <?php
 
-namespace Mehedimi\StaticVel\Support;
+namespace Mehedi\StaticVel\Support;
 
 use Illuminate\Http\Request;
 

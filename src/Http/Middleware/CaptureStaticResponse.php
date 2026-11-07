@@ -1,11 +1,11 @@
 <?php
 
-namespace Mehedimi\StaticVel\Http\Middleware;
+namespace Mehedi\StaticVel\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Mehedimi\StaticVel\Auth\AuthCookieSubscriber;
-use Mehedimi\StaticVel\Support\StaticPagePath;
+use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
+use Mehedi\StaticVel\Support\StaticPagePath;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;

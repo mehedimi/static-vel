@@ -219,7 +219,7 @@ Add the sync middleware to your `web` middleware group so the cookie always mirr
 // bootstrap/app.php
 ->withMiddleware(function (Middleware $middleware) {
     $middleware->web(append: [
-        \Mehedimi\StaticVel\Http\Middleware\SyncAuthCookie::class,
+        \Mehedi\StaticVel\Http\Middleware\SyncAuthCookie::class,
     ]);
 })
 ```

@@ -1,11 +1,11 @@
 <?php
 
-namespace Mehedimi\StaticVel\Http\Middleware;
+namespace Mehedi\StaticVel\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
-use Mehedimi\StaticVel\Auth\AuthCookieSubscriber;
+use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
 use Symfony\Component\HttpFoundation\Response;
 
 use function auth;

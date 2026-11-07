@@ -1,6 +1,6 @@
 <?php
 
-namespace Mehedimi\StaticVel\Tests;
+namespace Mehedi\StaticVel\Tests;
 
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;

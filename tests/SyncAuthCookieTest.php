@@ -1,6 +1,6 @@
 <?php
 
-namespace Mehedimi\StaticVel\Tests;
+namespace Mehedi\StaticVel\Tests;
 
 use Illuminate\Support\Facades\Cookie;
 use PHPUnit\Framework\Attributes\Test;
