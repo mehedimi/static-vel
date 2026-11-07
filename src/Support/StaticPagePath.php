@@ -14,7 +14,7 @@ class StaticPagePath
     /**
      * The maximum length of the query string token inside a file name.
      */
-    protected const MAX_QUERY_LENGTH = 128;
+    protected const int MAX_QUERY_LENGTH = 128;
 
     /**
      * Resolve the absolute path of the static file for the given request,

@@ -35,7 +35,7 @@ flowchart TD
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.3+
 - Laravel 11, 12 or 13
 - nginx (or any web server able to serve files with a fallback to Laravel)
 

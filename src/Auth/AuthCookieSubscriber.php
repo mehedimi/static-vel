@@ -14,7 +14,7 @@ class AuthCookieSubscriber
     /**
      * The lifetime of the marker cookie, in minutes.
      */
-    public const COOKIE_MINUTES = 60 * 24 * 365;
+    public const int COOKIE_MINUTES = 60 * 24 * 365;
 
     /**
      * Register the listeners for the subscriber.
