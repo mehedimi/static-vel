@@ -7,17 +7,17 @@ Effortless static response caching for Laravel: capture rendered responses **aft
 ```mermaid
 flowchart LR
     A["Request<br/>GET /blog?category=e-commerce"] --> B{"Authenticated?"}
+    B -->|yes| NF["Laravel responds<br/>with fresh content<br/>(never captured)"]
     B -->|no| C{"Inertia partial<br/>reload?"}
-    B -->|yes| L["Laravel renders<br/>the page"]
+    C -->|yes| NF
     C -->|no| D{"Safe query<br/>string?"}
-    C -->|yes| L
-    D -->|no| L
+    D -->|no| NF
     D -->|yes| E{"Query string<br/>present?"}
     E -->|no| F["nginx looks for<br/>blog.html<br/>(.json for Inertia)"]
     E -->|yes| G["nginx looks for<br/>blog.category=e-commerce.html<br/>(.json for Inertia)"]
     F -->|file exists| S["Served as a static file<br/>PHP never boots"]
     G -->|file exists| S
-    F -->|missing| L
+    F -->|missing| L["Laravel renders<br/>the page"]
     G -->|missing| L
     L --> T["Response sent<br/>to the browser"]
     T --> U["static-vel captures<br/>+ stores the file"]
@@ -25,6 +25,7 @@ flowchart LR
 
     style S fill:#10b981,color:#ffffff
     style L fill:#3b82f6,color:#ffffff
+    style NF fill:#3b82f6,color:#ffffff
     style U fill:#f59e0b,color:#ffffff
 ```
 
