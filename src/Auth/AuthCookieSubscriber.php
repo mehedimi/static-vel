@@ -51,17 +51,19 @@ class AuthCookieSubscriber
     public static function queueMarker(): void
     {
         if ($name = static::cookieName()) {
-            Cookie::queue($name, '1', static::COOKIE_MINUTES, ...static::pathAndDomain());
+            Cookie::queue($name, '1', static::COOKIE_MINUTES);
         }
     }
 
     /**
-     * Queue a cookie that removes the auth marker.
+     * Queue a cookie that removes the auth marker. Both the queue and the
+     * forget fall back to the cookie jar defaults (session.path and
+     * session.domain), so they always target the same cookie.
      */
     public static function queueForget(): void
     {
         if ($name = static::cookieName()) {
-            Cookie::queue(Cookie::forget($name, ...static::pathAndDomain()));
+            Cookie::queue(Cookie::forget($name));
         }
     }
 
@@ -78,20 +80,5 @@ class AuthCookieSubscriber
         }
 
         return $name;
-    }
-
-    /**
-     * The path and domain the marker cookie is managed with. Both the set
-     * and the forget must target the exact same cookie, so they are taken
-     * from the session configuration instead of relying on defaults.
-     *
-     * @return array{string, string|null}
-     */
-    protected static function pathAndDomain(): array
-    {
-        $path = config('session.path', '/');
-        $domain = config('session.domain');
-
-        return [is_string($path) ? $path : '/', is_string($domain) ? $domain : null];
     }
 }
