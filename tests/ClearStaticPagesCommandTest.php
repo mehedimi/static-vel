@@ -2,6 +2,8 @@
 
 namespace Mehedi\StaticVel\Tests;
 
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
 
 class ClearStaticPagesCommandTest extends TestCase
@@ -29,5 +31,31 @@ class ClearStaticPagesCommandTest extends TestCase
         $this->artisan('static-vel:clear')
             ->expectsOutputToContain('No static pages to clear.')
             ->assertSuccessful();
+    }
+
+    #[Test]
+    public function it_fails_when_the_files_cannot_be_deleted(): void
+    {
+        if (function_exists('posix_getuid') && posix_getuid() === 0) {
+            $this->markTestSkipped('Root can delete files regardless of permissions.');
+        }
+
+        File::ensureDirectoryExists($this->staticPath, 0775);
+
+        file_put_contents($this->staticPath.'/about.html', 'about');
+
+        // The captured pages are owned by the PHP user on a real server -
+        // a read-only directory reproduces what the deploy user sees.
+        chmod($this->staticPath, 0555);
+
+        try {
+            $this->artisan('static-vel:clear')
+                ->expectsOutputToContain('could not be deleted')
+                ->assertExitCode(Command::FAILURE);
+
+            $this->assertFileExists($this->staticPath.'/about.html');
+        } finally {
+            chmod($this->staticPath, 0775);
+        }
     }
 }

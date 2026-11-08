@@ -5,6 +5,7 @@ namespace Mehedi\StaticVel\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Mehedi\StaticVel\Support\StaticPagePath;
+use SplFileInfo;
 
 class ClearStaticPages extends Command
 {
@@ -37,8 +38,25 @@ class ClearStaticPages extends Command
 
         $files = File::allFiles($path, hidden: true);
 
-        if (! File::deleteDirectory($path, preserve: true)) {
-            $this->error("Unable to clear the static pages from [{$path}].");
+        // File::deleteDirectory() always reports success, even when every
+        // unlink fails (e.g. the files are owned by the PHP user while the
+        // command runs as someone else). Delete the files directly and
+        // verify the directory is actually empty afterwards.
+        $paths = array_map(fn (SplFileInfo $file) => $file->getPathname(), $files);
+
+        if ($paths !== []) {
+            File::delete($paths);
+        }
+
+        // Remove the emptied nested directories, keeping the directory itself.
+        File::deleteDirectory($path, preserve: true);
+
+        $remaining = count(File::allFiles($path, hidden: true));
+
+        if ($remaining > 0) {
+            $cleared = count($files) - $remaining;
+
+            $this->error("Cleared [{$cleared} of ".count($files)."] static page(s) from [{$path}] - the rest could not be deleted. Make the directory writable for the user running this command.");
 
             return self::FAILURE;
         }

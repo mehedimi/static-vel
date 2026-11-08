@@ -17,4 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auth marker cookie (`static_vel_auth`, configurable): set on login, cleared on logout, and kept in sync by the optional `static-vel.auth` middleware. Authenticated visitors are never captured, and the nginx config bypasses the static cache for them.
 - `static-vel:clear` command for deploy scripts.
 - `static-vel:routes` command listing every route covered by static rendering, with the static file each route writes.
+
+### Fixed
+
+- `static-vel:clear` reported success even when the captured files could not be deleted - Laravel's `File::deleteDirectory()` never reports failure. The command now deletes the files itself, verifies the directory is empty and exits with a failure code listing what is left behind, so deploy scripts stop instead of silently serving stale pages.
 - nginx serving guide with PHP-FPM and Laravel Octane / PHP-PM variants, hardened against URL traversal.

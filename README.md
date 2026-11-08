@@ -375,7 +375,13 @@ php artisan static-vel:clear
 php artisan static-vel:clear
 ```
 
-Removes every captured page (the directory itself is kept). Run it after each deploy, or whenever a page's content changes.
+Removes every captured page (the directory itself is kept). Run it after each deploy, or whenever a page's content changes. The command verifies the directory is actually empty afterwards — if some files could not be deleted it reports what is left and exits with a failure code, so deploy pipelines stop instead of silently serving stale pages.
+
+That failure means an ownership mismatch: the captured pages are written by the PHP user (e.g. `www-data`), while the command runs as someone else without write permission on the directory. Fix it once:
+
+```bash
+sudo chown -R www-data:www-data storage/static-vel
+```
 
 Since nginx serves files directly, there is no TTL — a captured page stays until you clear it. Build the clear step into your deploy pipeline (e.g. as a [Laravel Deployer](https://deployer.org/) or Forge deploy script task).
 
