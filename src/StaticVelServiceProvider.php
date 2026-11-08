@@ -7,6 +7,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
 use Mehedi\StaticVel\Commands\ClearStaticPages;
+use Mehedi\StaticVel\Commands\ListStaticRoutes;
 use Mehedi\StaticVel\Http\Middleware\CaptureStaticResponse;
 use Mehedi\StaticVel\Http\Middleware\SyncAuthCookie;
 
@@ -32,6 +33,7 @@ class StaticVelServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 ClearStaticPages::class,
+                ListStaticRoutes::class,
             ]);
         }
 

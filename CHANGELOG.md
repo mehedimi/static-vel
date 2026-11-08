@@ -16,4 +16,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `handle_inertia` config: captures Inertia JSON payloads as `<path>.json` so client-side navigations are served statically; partial reloads are never captured.
 - Auth marker cookie (`static_vel_auth`, configurable): set on login, cleared on logout, and kept in sync by the optional `static-vel.auth` middleware. Authenticated visitors are never captured, and the nginx config bypasses the static cache for them.
 - `static-vel:clear` command for deploy scripts.
+- `static-vel:routes` command listing every route covered by static rendering, with the static file each route writes.
 - nginx serving guide with PHP-FPM and Laravel Octane / PHP-PM variants, hardened against URL traversal.

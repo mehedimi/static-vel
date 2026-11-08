@@ -379,6 +379,29 @@ Removes every captured page (the directory itself is kept). Run it after each de
 
 Since nginx serves files directly, there is no TTL — a captured page stays until you clear it. Build the clear step into your deploy pipeline (e.g. as a [Laravel Deployer](https://deployer.org/) or Forge deploy script task).
 
+## Listing covered routes
+
+```bash
+php artisan static-vel:routes
+```
+
+Lists every route the capture middleware covers, together with the static file it writes — the file names are resolved with the exact same path mapping the middleware uses:
+
+```
++--------+----------------+----------------------------------------+
+| Method | URI            | Static file                            |
++--------+----------------+----------------------------------------+
+| GET    | /              | index.html, index.json                 |
+| GET    | /about         | about.html, about.json                 |
+| GET    | /blog          | blog.html, blog.json                   |
+| GET    | /products/{id} | products/{id}.html, products/{id}.json |
++--------+----------------+----------------------------------------+
+```
+
+- A route is covered when it carries the `static-vel` alias, the `CaptureStaticResponse` class, a custom alias pointing at that class, or a [middleware group](https://laravel.com/docs/middleware#middleware-groups) containing any of them. If the middleware is registered globally, every `GET` route is covered.
+- Only `GET` routes are listed — nothing else is ever captured. The remaining runtime conditions still apply (status `200`, no auth marker cookie, query keys allowed via `CacheKey::allowQueryKeys()`), so a listed route is *covered*, not necessarily captured on every request.
+- The JSON file is only shown while `handle_inertia` is enabled.
+
 ## Configuration
 
 Published as `config/static-vel.php`:
