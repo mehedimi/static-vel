@@ -16,7 +16,7 @@ class ClearStaticPagesCommandTest extends TestCase
         file_put_contents($this->staticPath.'/products/12.html', 'product');
 
         $this->artisan('static-vel:clear')
-            ->expectsOutputToContain('Cleared [2] static page(s)')
+            ->expectsOutputToContain('Static pages cleared.')
             ->assertSuccessful();
 
         $this->assertDirectoryExists($this->staticPath);
@@ -50,7 +50,7 @@ class ClearStaticPagesCommandTest extends TestCase
 
         try {
             $this->artisan('static-vel:clear')
-                ->expectsOutputToContain('could not be deleted')
+                ->expectsOutputToContain('Unable to clear the static pages')
                 ->assertExitCode(Command::FAILURE);
 
             $this->assertFileExists($this->staticPath.'/about.html');

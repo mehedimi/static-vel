@@ -375,7 +375,7 @@ php artisan static-vel:clear
 php artisan static-vel:clear
 ```
 
-Removes every captured page (the directory itself is kept). Run it after each deploy, or whenever a page's content changes. The command verifies the directory is actually empty afterwards — if some files could not be deleted it reports what is left and exits with a failure code, so deploy pipelines stop instead of silently serving stale pages.
+Removes every captured page (the directory itself is kept). Run it after each deploy, or whenever a page's content changes. The command verifies the directory is actually empty afterwards — if some files could not be deleted, it exits with a failure code instead of reporting success, so deploy pipelines stop instead of silently serving stale pages.
 
 That failure means an ownership mismatch: the captured pages are written by the PHP user (e.g. `www-data`), while the command runs as someone else without write permission on the directory. Fix it once:
 
