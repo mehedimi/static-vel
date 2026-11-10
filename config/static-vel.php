@@ -58,6 +58,13 @@ return [
     | cookie (or for authenticated users), so personalized content can never
     | overwrite the guest cache.
     |
+    | The package exempts the cookie from Laravel's cookie encryption - it
+    | only ever holds the constant `1`, so there is nothing to protect and
+    | nginx gets a plain value it can act on. Forging the cookie is harmless:
+    | it only routes the visitor to Laravel, which checks the real auth
+    | state. No entry in your application's `EncryptCookies` exceptions is
+    | needed.
+    |
     | Set it to `null` to disable the auth handling. Avoid dashes in the
     | name - nginx exposes cookies as `$cookie_<name>` variables.
     |

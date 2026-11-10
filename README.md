@@ -315,6 +315,7 @@ Notes for long-running workers:
 nginx cannot check Laravel sessions — but it can inspect cookies. static-vel maintains a dedicated **marker cookie** (`static_vel_auth`, configurable) that only exists for authenticated visitors:
 
 - The package sets the cookie automatically on the `Login` event and clears it on `Logout` — no setup required.
+- The cookie only ever holds the constant `1`, so the package keeps it out of Laravel's cookie encryption (`EncryptCookies::except()`) — nginx sees a plain `1` instead of an opaque blob. Forging the cookie is harmless: it only routes the visitor to Laravel, which checks the real auth state.
 - The nginx config above skips the static cache whenever the request carries the cookie (`if ($cookie_static_vel_auth)`) and lets Laravel render the page.
 - The capture middleware also skips requests carrying the cookie (and authenticated users in general), so personalized responses can never overwrite the guest cache.
 

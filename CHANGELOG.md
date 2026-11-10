@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+
+- The auth marker cookie is exempted from Laravel's cookie encryption (`EncryptCookies::except()`): it only ever holds the constant `1`, so there is nothing to protect and nginx sees a plain value instead of an opaque encrypted blob. A plain incoming cookie now also survives request decryption untouched. The package registers the exemption itself - no entry in the application's `EncryptCookies` exceptions is needed.
+
 ## 1.0.0 - 2026-11-07
 
 ### Added
