@@ -150,6 +150,9 @@ The rules:
 > [!WARNING]
 > A page whose content varies by query parameter can now be cached safely — each variant gets its own file. But every variant must still render the **same response for every visitor**: never attach the middleware to pages where a query parameter personalizes content (e.g. `?user_id=`), and never to authenticated dashboards.
 
+> [!CAUTION]
+> This opt-in is where the package hands responsibility over to you — **make sure you understand what you are configuring.** The allowlist has no idea what your values look like: allow an unbounded string, or allow several optional keys at once, and every distinct query string a visitor sends (including order and combination variants) becomes its own file. A crawler — or a deliberate flood — will then fill the storage disk one small HTML file at a time. Only allow keys whose value space you can bound (`in:` lists, small integers), validate every value, and keep `static-vel:clear` / `STATIC_VEL_ENABLED=false` in mind as the levers to pull if it ever goes wrong.
+
 ## Serving with nginx
 
 This is the whole trick: when a captured file exists, nginx serves it and Laravel is never invoked. When it doesn't, the request falls through to Laravel as usual — which is also how the page gets captured in the first place.
@@ -315,6 +318,7 @@ Notes for long-running workers:
 nginx cannot check Laravel sessions — but it can inspect cookies. static-vel maintains a dedicated **marker cookie** (`static_vel_auth`, configurable) that only exists for authenticated visitors:
 
 - The package sets the cookie automatically on the `Login` event and clears it on `Logout` — no setup required.
+- The cookie only ever holds the constant `1`, so the package keeps it out of Laravel's cookie encryption (`EncryptCookies::except()`) — nginx sees a plain `1` instead of an opaque blob. Forging the cookie is harmless: it only routes the visitor to Laravel, which checks the real auth state.
 - The nginx config above skips the static cache whenever the request carries the cookie (`if ($cookie_static_vel_auth)`) and lets Laravel render the page.
 - The capture middleware also skips requests carrying the cookie (and authenticated users in general), so personalized responses can never overwrite the guest cache.
 
@@ -343,6 +347,9 @@ Notes:
 ## Config generator
 
 A small Vue + Tailwind app ships in [`config-generator/`](config-generator) to build the nginx configuration for you: enter your endpoints (each with optional query parameter names), your domain, roots, auth cookie, whether Inertia payloads should be served, and whether you run PHP-FPM or Octane — it generates the complete server block and shows the exact cache file every endpoint maps to, warning you about query parameters that will never be cached. Query parameter values are dynamic plain strings: every distinct query string is cached under its own file name.
+
+> [!WARNING]
+> The generator is still in **beta — use at your own risk**. It produces a starting point, not a reviewed deployment artifact: you must understand what you are configuring, so review every directive and test the output against your application before pointing nginx at production traffic.
 
 It is a development tool only — `export-ignore`d from dist archives and not required by the package:
 

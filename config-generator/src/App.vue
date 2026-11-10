@@ -81,12 +81,25 @@ function endpointUrl(endpoint: Endpoint): string {
         <header class="mb-10">
             <h1 class="text-2xl font-bold tracking-tight text-slate-900">
                 static-vel <span class="text-emerald-600">config generator</span>
+                <span class="ml-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 align-middle text-xs font-semibold text-amber-700">beta</span>
             </h1>
             <p class="mt-2 max-w-3xl text-sm text-slate-500">
                 Enter your endpoints, pick your runtime, and copy the generated nginx configuration.
                 The file name rules mirror the capture middleware: <code class="rounded bg-slate-100 px-1 text-slate-700">/blog?category=…</code>
                 is stored as <code class="rounded bg-slate-100 px-1 text-slate-700">blog.category=….html</code>.
             </p>
+
+            <div class="mt-4 max-w-3xl rounded-xl border border-amber-300 bg-amber-50 p-4">
+                <p class="text-sm font-semibold text-amber-800">Beta — use at your own risk.</p>
+                <p class="mt-1 text-sm leading-relaxed text-amber-800">
+                    This generator produces a starting point, not a reviewed deployment artifact.
+                    You must understand what you are configuring: verify every endpoint, the auth
+                    cookie and the roots against your application, and test the output before
+                    pointing nginx at production traffic. Query parameter values are cached verbatim —
+                    every distinct query string becomes its own cache file, and unbounded values can
+                    fill the storage disk.
+                </p>
+            </div>
         </header>
 
         <div class="grid gap-8 lg:grid-cols-2">

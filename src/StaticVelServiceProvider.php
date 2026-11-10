@@ -3,6 +3,7 @@
 namespace Mehedi\StaticVel;
 
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Mehedi\StaticVel\Auth\AuthCookieSubscriber;
@@ -37,8 +38,13 @@ class StaticVelServiceProvider extends ServiceProvider
             ]);
         }
 
-        if (AuthCookieSubscriber::cookieName()) {
+        if ($name = AuthCookieSubscriber::cookieName()) {
             $events->subscribe(AuthCookieSubscriber::class);
+
+            // The marker only ever holds the constant "1", so there is no
+            // secret to protect and nginx needs to see a plain value it can
+            // act on. Exempt it from Laravel's cookie encryption.
+            EncryptCookies::except($name);
         }
 
         $router->aliasMiddleware('static-vel', CaptureStaticResponse::class);
