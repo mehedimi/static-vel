@@ -150,6 +150,9 @@ The rules:
 > [!WARNING]
 > A page whose content varies by query parameter can now be cached safely — each variant gets its own file. But every variant must still render the **same response for every visitor**: never attach the middleware to pages where a query parameter personalizes content (e.g. `?user_id=`), and never to authenticated dashboards.
 
+> [!CAUTION]
+> This opt-in is where the package hands responsibility over to you — **make sure you understand what you are configuring.** The allowlist has no idea what your values look like: allow an unbounded string, or allow several optional keys at once, and every distinct query string a visitor sends (including order and combination variants) becomes its own file. A crawler — or a deliberate flood — will then fill the storage disk one small HTML file at a time. Only allow keys whose value space you can bound (`in:` lists, small integers), validate every value, and keep `static-vel:clear` / `STATIC_VEL_ENABLED=false` in mind as the levers to pull if it ever goes wrong.
+
 ## Serving with nginx
 
 This is the whole trick: when a captured file exists, nginx serves it and Laravel is never invoked. When it doesn't, the request falls through to Laravel as usual — which is also how the page gets captured in the first place.
