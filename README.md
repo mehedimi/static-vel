@@ -348,6 +348,9 @@ Notes:
 
 A small Vue + Tailwind app ships in [`config-generator/`](config-generator) to build the nginx configuration for you: enter your endpoints (each with optional query parameter names), your domain, roots, auth cookie, whether Inertia payloads should be served, and whether you run PHP-FPM or Octane — it generates the complete server block and shows the exact cache file every endpoint maps to, warning you about query parameters that will never be cached. Query parameter values are dynamic plain strings: every distinct query string is cached under its own file name.
 
+> [!WARNING]
+> The generator is still in **beta — use at your own risk**. It produces a starting point, not a reviewed deployment artifact: you must understand what you are configuring, so review every directive and test the output against your application before pointing nginx at production traffic.
+
 It is a development tool only — `export-ignore`d from dist archives and not required by the package:
 
 ```bash
